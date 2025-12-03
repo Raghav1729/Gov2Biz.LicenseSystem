@@ -1,0 +1,273 @@
+@{
+    ViewData["Title"] = "Make Payment";
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Make Payment</h1>
+        <a href="@Url.Action("Index", "Payment")" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Payments
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- License Information -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">License Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">License Number</h6>
+                            <p>@ViewBag.License.LicenseNumber</p>
+                            
+                            <h6 class="text-primary mt-3">License Type</h6>
+                            <p>@ViewBag.License.Type</p>
+                            
+                            <h6 class="text-primary mt-3">Status</h6>
+                            <p>
+                                <span class="badge badge-@(ViewBag.License.Status == "Approved" ? "success" : ViewBag.License.Status == "Pending" ? "warning" : "danger")">
+                                    @ViewBag.License.Status
+                                </span>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Payment Amount</h6>
+                            <p class="h4 text-success">$@ViewBag.License.Fee.ToString("F2")</p>
+                            
+                            <h6 class="text-primary mt-3">Due Date</h6>
+                            <p>@DateTime.Now.AddDays(7).ToString("MMMM dd, yyyy")</p>
+                            
+                            <div class="alert alert-info mt-3">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>Note:</strong> Payment is required to activate your license.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Form -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Payment Details</h6>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" method="post">
+                        <input type="hidden" name="licenseId" value="@ViewBag.LicenseId" />
+                        <input type="hidden" name="amount" value="@ViewBag.License.Fee" />
+                        
+                        <div class="form-group mb-3">
+                            <label for="paymentMethod" class="form-label">Payment Method *</label>
+                            <select class="form-select" id="paymentMethod" name="paymentMethod" required onchange="updatePaymentForm()">
+                                <option value="">Select Payment Method</option>
+                                <option value="Credit Card">Credit Card</option>
+                                <option value="Debit Card">Debit Card</option>
+                                <option value="Bank Transfer">Bank Transfer</option>
+                                <option value="PayPal">PayPal</option>
+                            </select>
+                        </div>
+
+                        <!-- Credit/Debit Card Fields -->
+                        <div id="cardFields" style="display: none;">
+                            <div class="form-group mb-3">
+                                <label for="cardNumber" class="form-label">Card Number *</label>
+                                <input type="text" class="form-control" id="cardNumber" name="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19">
+                                <small class="form-text text-muted">Enter your 16-digit card number</small>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label for="expiryDate" class="form-label">Expiry Date *</label>
+                                        <input type="text" class="form-control" id="expiryDate" name="expiryDate" placeholder="MM/YY" maxlength="5">
+                                        <small class="form-text text-muted">MM/YY format</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label for="cvv" class="form-label">CVV *</label>
+                                        <input type="text" class="form-control" id="cvv" name="cvv" placeholder="123" maxlength="4">
+                                        <small class="form-text text-muted">3 or 4 digit security code</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bank Transfer Fields -->
+                        <div id="bankFields" style="display: none;">
+                            <div class="alert alert-info">
+                                <h6><i class="fas fa-university"></i> Bank Transfer Instructions</h6>
+                                <p class="mb-2">Please transfer the payment amount to the following bank account:</p>
+                                <ul class="mb-0">
+                                    <li><strong>Bank:</strong> Gov2Biz National Bank</li>
+                                    <li><strong>Account Number:</strong> 1234567890</li>
+                                    <li><strong>Routing Number:</strong> 987654321</li>
+                                    <li><strong>Account Name:</strong> Gov2Biz License Services</li>
+                                </ul>
+                                <p class="mb-0 mt-2"><strong>Reference:</strong> @ViewBag.License.LicenseNumber</p>
+                            </div>
+                        </div>
+
+                        <!-- PayPal Fields -->
+                        <div id="paypalFields" style="display: none;">
+                            <div class="alert alert-warning">
+                                <h6><i class="fab fa-paypal"></i> PayPal Payment</h6>
+                                <p class="mb-0">You will be redirected to PayPal to complete your payment securely.</p>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="cardholderName" class="form-label">Cardholder Name *</label>
+                            <input type="text" class="form-control" id="cardholderName" name="cardholderName" placeholder="John Doe" required>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="@Url.Action("Index", "Payment")" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-credit-card"></i> Process Payment $@ViewBag.License.Fee.ToString("F2")
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <!-- Payment Security -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Payment Security</h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <i class="fas fa-lock fa-3x text-success"></i>
+                    </div>
+                    <h6 class="text-center">Secure Payment Processing</h6>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success"></i> SSL Encrypted</li>
+                        <li><i class="fas fa-check text-success"></i> PCI Compliant</li>
+                        <li><i class="fas fa-check text-success"></i> Fraud Protection</li>
+                        <li><i class="fas fa-check text-success"></i> 24/7 Monitoring</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Accepted Cards -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Accepted Payment Methods</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 mb-3">
+                            <i class="fab fa-cc-visa fa-2x text-primary"></i>
+                            <p class="small mb-0">Visa</p>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <i class="fab fa-cc-mastercard fa-2x text-danger"></i>
+                            <p class="small mb-0">Mastercard</p>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <i class="fab fa-cc-amex fa-2x text-info"></i>
+                            <p class="small mb-0">American Express</p>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <i class="fab fa-cc-discover fa-2x text-warning"></i>
+                            <p class="small mb-0">Discover</p>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <i class="fab fa-paypal fa-2x text-blue"></i>
+                            <p class="small mb-0">PayPal</p>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <i class="fas fa-university fa-2x text-secondary"></i>
+                            <p class="small mb-0">Bank Transfer</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Help -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Need Help?</h6>
+                </div>
+                <div class="card-body">
+                    <p>If you encounter any issues with your payment:</p>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-phone"></i> Call: 1-800-GOV2BIZ</li>
+                        <li><i class="fas fa-envelope"></i> Email: payments@gov2biz.com</li>
+                        <li><i class="fas fa-clock"></i> Support: 24/7</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function updatePaymentForm() {
+            var paymentMethod = document.getElementById('paymentMethod').value;
+            var cardFields = document.getElementById('cardFields');
+            var bankFields = document.getElementById('bankFields');
+            var paypalFields = document.getElementById('paypalFields');
+            var cardholderName = document.getElementById('cardholderName');
+            var cardNumber = document.getElementById('cardNumber');
+            var expiryDate = document.getElementById('expiryDate');
+            var cvv = document.getElementById('cvv');
+
+            // Hide all fields first
+            cardFields.style.display = 'none';
+            bankFields.style.display = 'none';
+            paypalFields.style.display = 'none';
+
+            // Reset required attributes
+            cardNumber.required = false;
+            expiryDate.required = false;
+            cvv.required = false;
+
+            // Show relevant fields based on payment method
+            if (paymentMethod === 'Credit Card' || paymentMethod === 'Debit Card') {
+                cardFields.style.display = 'block';
+                cardNumber.required = true;
+                expiryDate.required = true;
+                cvv.required = true;
+            } else if (paymentMethod === 'Bank Transfer') {
+                bankFields.style.display = 'block';
+                cardholderName.required = false;
+            } else if (paymentMethod === 'PayPal') {
+                paypalFields.style.display = 'block';
+                cardholderName.required = false;
+            }
+        }
+
+        // Format card number
+        document.getElementById('cardNumber').addEventListener('input', function(e) {
+            var value = e.target.value.replace(/\s/g, '');
+            var formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
+            e.target.value = formattedValue;
+        });
+
+        // Format expiry date
+        document.getElementById('expiryDate').addEventListener('input', function(e) {
+            var value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 2) {
+                formattedValue = value.substring(0, 2) + '/' + value.substring(2, 4);
+            } else {
+                formattedValue = value;
+            }
+            e.target.value = formattedValue;
+        });
+
+        // Only allow numbers for CVV
+        document.getElementById('cvv').addEventListener('input', function(e) {
+            e.target.value = e.target.value.replace(/\D/g, '');
+        });
+    </script>
+}

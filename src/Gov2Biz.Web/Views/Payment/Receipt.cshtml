@@ -1,0 +1,258 @@
+@{
+    ViewData["Title"] = "Payment Receipt";
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Payment Receipt</h1>
+        <div>
+            <button onclick="window.print()" class="btn btn-secondary me-2">
+                <i class="fas fa-print"></i> Print
+            </button>
+            <a href="@Url.Action("Details", "Payment", new { id = Model.Id })" class="btn btn-primary">
+                <i class="fas fa-arrow-left"></i> Back to Details
+            </a>
+        </div>
+    </div>
+
+    <!-- Receipt Container -->
+    <div class="card shadow" id="receiptContainer">
+        <div class="card-body">
+            <!-- Receipt Header -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h4 class="text-primary">Gov2Biz License System</h4>
+                    <p class="text-muted mb-1">123 Government Avenue</p>
+                    <p class="text-muted mb-1">Washington, DC 20001</p>
+                    <p class="text-muted mb-1">Phone: (555) 123-4567</p>
+                    <p class="text-muted mb-0">Email: info@gov2biz.com</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <h3 class="text-success">PAYMENT RECEIPT</h3>
+                    <p class="text-muted mb-1">Receipt #: RCP-@Model.Id.ToString("D6")</p>
+                    <p class="text-muted mb-0">Date: @DateTime.Now.ToString("MMMM dd, yyyy")</p>
+                </div>
+            </div>
+
+            <!-- Payment Details -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <h5 class="text-primary mb-3">Payment Details</h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <tbody>
+                                <tr>
+                                    <td width="30%"><strong>Transaction ID:</strong></td>
+                                    <td>@Model.TransactionId</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>License Number:</strong></td>
+                                    <td>@Model.LicenseNumber</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Payment Method:</strong></td>
+                                    <td>@Model.PaymentMethod</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Cardholder Name:</strong></td>
+                                    <td>@Model.CardholderName</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Payment Date:</strong></td>
+                                    <td>
+                                        @{
+                                            var processedDate = Model.ProcessedDate;
+                                            if (processedDate != null)
+                                            {
+                                                try {
+                                                    var date = (DateTime)processedDate;
+                                                    @date.ToString("MMMM dd, yyyy")
+                                                }
+                                                catch {
+                                                    <span>Not available</span>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span>Not available</span>
+                                            }
+                                        }
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Payment Status:</strong></td>
+                                    <td>
+                                        <span class="badge badge-@(Model.Status == "Completed" ? "success" : Model.Status == "Pending" ? "warning" : Model.Status == "Refunded" ? "danger" : "secondary")">
+                                            @Model.Status
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Billing Information -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h5 class="text-primary mb-3">Billing Information</h5>
+                    <table class="table table-bordered">
+                        <tbody>
+                            <tr>
+                                <td width="40%"><strong>Name:</strong></td>
+                                <td>@Model.CardholderName</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Email:</strong></td>
+                                <td>customer@example.com</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Phone:</strong></td>
+                                <td>(555) 987-6543</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h5 class="text-primary mb-3">Payment Breakdown</h5>
+                    <table class="table table-bordered">
+                        <tbody>
+                            <tr>
+                                <td width="60%">License Fee:</td>
+                                <td class="text-right">$@Model.Amount.ToString("F2")</td>
+                            </tr>
+                            <tr>
+                                <td>Processing Fee:</td>
+                                <td class="text-right">$0.00</td>
+                            </tr>
+                            <tr>
+                                <td>Tax:</td>
+                                <td class="text-right">$0.00</td>
+                            </tr>
+                            <tr class="table-success">
+                                <td><strong>Total Paid:</strong></td>
+                                <td class="text-right"><strong>$@Model.Amount.ToString("F2")</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Terms and Conditions -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <h5 class="text-primary mb-3">Terms and Conditions</h5>
+                    <div class="alert alert-light">
+                        <ol class="mb-0">
+                            <li>This receipt serves as proof of payment for the license fee.</li>
+                            <li>Payment was processed securely through our payment gateway.</li>
+                            <li>License will be activated upon successful payment confirmation.</li>
+                            <li>For any inquiries, please contact our support team.</li>
+                            <li>This receipt is for your records and tax purposes.</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Signature Section -->
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="text-primary mb-3">Authorized Signature</h5>
+                    <div class="border-bottom mb-2" style="height: 60px;"></div>
+                    <p class="text-muted">Gov2Biz License System</p>
+                    <p class="text-muted">Automated Payment System</p>
+                </div>
+                <div class="col-md-6">
+                    <h5 class="text-primary mb-3">Customer Confirmation</h5>
+                    <div class="border-bottom mb-2" style="height: 60px;"></div>
+                    <p class="text-muted">@Model.CardholderName</p>
+                    <p class="text-muted">Payment Date: @DateTime.Now.ToString("MMMM dd, yyyy")</p>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="row mt-4">
+                <div class="col-md-12 text-center">
+                    <p class="text-muted">
+                        <strong>Thank you for your payment!</strong><br>
+                        This receipt was generated on @DateTime.Now.ToString("MMMM dd, yyyy at hh:mm tt")<br>
+                        For questions, please contact us at (555) 123-4567 or info@gov2biz.com
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons (Hidden when printing) -->
+    <div class="row mt-4 no-print">
+        <div class="col-md-12 text-center">
+            <button onclick="window.print()" class="btn btn-primary me-2">
+                <i class="fas fa-print"></i> Print Receipt
+            </button>
+            <button onclick="downloadPDF()" class="btn btn-success me-2">
+                <i class="fas fa-file-pdf"></i> Download PDF
+            </button>
+            <button onclick="emailReceipt()" class="btn btn-info me-2">
+                <i class="fas fa-envelope"></i> Email Receipt
+            </button>
+            <a href="@Url.Action("Details", "Payment", new { id = Model.Id })" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Details
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    @media print {
+        .no-print {
+            display: none !important;
+        }
+        
+        #receiptContainer {
+            border: 1px solid #ddd;
+            padding: 20px;
+        }
+        
+        .card {
+            box-shadow: none !important;
+            border: none !important;
+        }
+        
+        .table-bordered {
+            border: 1px solid #000 !important;
+        }
+        
+        .table-bordered td, .table-bordered th {
+            border: 1px solid #000 !important;
+        }
+    }
+    
+    .table td {
+        vertical-align: middle;
+    }
+    
+    .border-bottom {
+        border-bottom: 2px solid #000;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        function downloadPDF() {
+            // In a real application, this would generate and download a PDF
+            alert('PDF download feature would be implemented here. For now, please use the Print function.');
+        }
+        
+        function emailReceipt() {
+            // In a real application, this would send the receipt via email
+            alert('Email receipt feature would be implemented here. The receipt would be sent to your registered email address.');
+        }
+        
+        // Auto-format receipt number when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Any additional initialization can go here
+        });
+    </script>
+}

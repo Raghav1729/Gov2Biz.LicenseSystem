@@ -1,0 +1,235 @@
+@{
+    ViewData["Title"] = "Payments";
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Payment Transactions</h1>
+        <div>
+            @if (ViewBag.UserRole == "Applicant")
+            {
+                <a href="@Url.Action("Create", "Payment", new { licenseId = 1 })" class="btn btn-primary me-2">
+                    <i class="fas fa-plus"></i> Make Payment
+                </a>
+            }
+            <a href="@Url.Action("Index", "Dashboard")" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Payment Statistics -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Revenue</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">$2,850.00</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Completed</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">4</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Pending</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">2</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Refunded</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">1</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-undo fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment List -->
+    <div class="card shadow">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                Transaction History
+                @if (ViewBag.UserRole == "Administrator")
+                {
+                    <span class="text-muted small ml-2">(All Agencies)</span>
+                }
+                else if (ViewBag.UserRole == "AgencyStaff")
+                {
+                    <span class="text-muted small ml-2">(@ViewBag.TenantId)</span>
+                }
+                else
+                {
+                    <span class="text-muted small ml-2">(My Payments)</span>
+                }
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="paymentTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Transaction ID</th>
+                            <th>License</th>
+                            <th>Amount</th>
+                            <th>Payment Method</th>
+                            <th>Status</th>
+                            <th>Cardholder</th>
+                            <th>Created Date</th>
+                            <th>Processed Date</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var payment in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@payment.TransactionId</strong>
+                                </td>
+                                <td>
+                                    <a href="@Url.Action("Details", "License", new { id = payment.LicenseId })" class="text-decoration-none">
+                                        @payment.LicenseNumber
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="text-success font-weight-bold">$@payment.Amount.ToString("F2")</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-@(payment.PaymentMethod == "Credit Card" ? "primary" : payment.PaymentMethod == "Bank Transfer" ? "info" : payment.PaymentMethod == "PayPal" ? "warning" : "secondary")">
+                                        @payment.PaymentMethod
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge badge-@(payment.Status == "Completed" ? "success" : payment.Status == "Pending" ? "warning" : payment.Status == "Refunded" ? "danger" : "secondary")">
+                                        @payment.Status
+                                    </span>
+                                </td>
+                                <td>@payment.CardholderName</td>
+                                <td>
+                                    @{
+                                        var createdDate = payment.CreatedDate;
+                                        if (createdDate != null)
+                                        {
+                                            try {
+                                                var date = (DateTime)createdDate;
+                                                @date.ToString("MMM dd, yyyy")
+                                            }
+                                            catch {
+                                                <span class="text-muted">-</span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    }
+                                </td>
+                                <td>
+                                    @{
+                                        var processedDate = payment.ProcessedDate;
+                                        if (processedDate != null)
+                                        {
+                                            try {
+                                                var date = (DateTime)processedDate;
+                                                @date.ToString("MMM dd, yyyy")
+                                            }
+                                            catch {
+                                                <span class="text-muted">-</span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group" role="group">
+                                        <a href="@Url.Action("Details", "Payment", new { id = payment.Id })" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="@Url.Action("Receipt", "Payment", new { id = payment.Id })" class="btn btn-sm btn-outline-info">
+                                            <i class="fas fa-receipt"></i>
+                                        </a>
+                                        @if ((ViewBag.UserRole == "Administrator" || ViewBag.UserRole == "AgencyStaff") && payment.Status == "Completed")
+                                        {
+                                            <a href="@Url.Action("Refund", "Payment", new { id = payment.Id })" class="btn btn-sm btn-outline-warning">
+                                                <i class="fas fa-undo"></i>
+                                            </a>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Initialize DataTable
+            $('#paymentTable').DataTable({
+                responsive: true,
+                pageLength: 25,
+                order: [[7, 'desc']],
+                language: {
+                    search: "Search payments:",
+                    lengthMenu: "Show _MENU_ payments per page",
+                    info: "Showing _START_ to _END_ of _TOTAL_ payments",
+                    paginate: {
+                        first: "First",
+                        last: "Last",
+                        next: "Next",
+                        previous: "Previous"
+                    }
+                }
+            });
+        });
+    </script>
+}

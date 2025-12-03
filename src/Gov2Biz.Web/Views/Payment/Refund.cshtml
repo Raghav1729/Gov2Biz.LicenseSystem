@@ -1,0 +1,215 @@
+@{
+    ViewData["Title"] = "Process Refund";
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Process Refund</h1>
+        <a href="@Url.Action("Details", "Payment", new { id = Model.Id })" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Payment Details
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Payment Information -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Payment Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Transaction ID</h6>
+                            <p><strong>@Model.TransactionId</strong></p>
+                            
+                            <h6 class="text-primary mt-3">License Number</h6>
+                            <p>@Model.LicenseNumber</p>
+                            
+                            <h6 class="text-primary mt-3">Payment Amount</h6>
+                            <p class="h4 text-danger">$@Model.Amount.ToString("F2")</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Payment Method</h6>
+                            <p>
+                                <span class="badge bg-@(Model.PaymentMethod == "Credit Card" ? "primary" : Model.PaymentMethod == "Bank Transfer" ? "info" : Model.PaymentMethod == "PayPal" ? "warning" : "secondary")">
+                                    @Model.PaymentMethod
+                                </span>
+                            </p>
+                            
+                            <h6 class="text-primary mt-3">Cardholder Name</h6>
+                            <p>@Model.CardholderName</p>
+                            
+                            <h6 class="text-primary mt-3">Original Payment Date</h6>
+                            <p>
+                                @{
+                                    var processedDate = Model.ProcessedDate;
+                                    if (processedDate != null)
+                                    {
+                                        try {
+                                            var date = (DateTime)processedDate;
+                                            @date.ToString("MMMM dd, yyyy")
+                                        }
+                                        catch {
+                                            <span class="text-muted">Not available</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Not available</span>
+                                    }
+                                }
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Refund Form -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Refund Details</h6>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Refund" method="post">
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        
+                        <div class="alert alert-warning">
+                            <h6><i class="fas fa-exclamation-triangle"></i> Refund Confirmation</h6>
+                            <p class="mb-0">You are about to process a refund of <strong>$@Model.Amount.ToString("F2")</strong> to the original payment method. This action cannot be undone.</p>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="reason" class="form-label">Refund Reason *</label>
+                            <textarea class="form-control" id="reason" name="reason" rows="4" required placeholder="Please provide a detailed reason for this refund..."></textarea>
+                            <small class="form-text text-muted">This reason will be recorded for audit purposes and will be visible to the customer.</small>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label class="form-label">Refund Information</label>
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <tbody>
+                                        <tr>
+                                            <td width="30%"><strong>Refund Amount:</strong></td>
+                                            <td class="text-danger h5">$@Model.Amount.ToString("F2")</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Refund Method:</strong></td>
+                                            <td>@Model.PaymentMethod (Original Payment Method)</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Processing Time:</strong></td>
+                                            <td>3-5 business days</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Refund Status:</strong></td>
+                                            <td><span class="badge bg-warning">Pending Processing</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-info-circle"></i> Important Information</h6>
+                            <ul class="mb-0">
+                                <li>Refunds will be processed to the original payment method used</li>
+                                <li>Processing time may vary depending on your bank or payment provider</li>
+                                <li>A confirmation email will be sent to the customer once the refund is processed</li>
+                                <li>The license associated with this payment will be deactivated upon refund completion</li>
+                            </ul>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="@Url.Action("Details", "Payment", new { id = Model.Id })" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to process this refund? This action cannot be undone.')">
+                                <i class="fas fa-undo"></i> Process Refund $@Model.Amount.ToString("F2")
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <!-- Refund Policy -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Refund Policy</h6>
+                </div>
+                <div class="card-body">
+                    <h6 class="text-primary">General Guidelines</h6>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success"></i> Full refunds available within 30 days</li>
+                        <li><i class="fas fa-check text-success"></i> Partial refunds for processing fees</li>
+                        <li><i class="fas fa-check text-success"></i> Refunds subject to approval</li>
+                        <li><i class="fas fa-check text-success"></i> Documentation may be required</li>
+                    </ul>
+
+                    <h6 class="text-primary mt-3">Non-Refundable Items</h6>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-times text-danger"></i> Processing fees after 7 days</li>
+                        <li><i class="fas fa-times text-danger"></i> Administrative charges</li>
+                        <li><i class="fas fa-times text-danger"></i> Late payment penalties</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Recent Refunds -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Recent Refunds</h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">TXN-003</h6>
+                                <small class="text-success">Completed</small>
+                            </div>
+                            <p class="mb-1 small">$300.00 - Duplicate payment</p>
+                            <small class="text-muted">Processed 2 days ago</small>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">TXN-001</h6>
+                                <small class="text-warning">Processing</small>
+                            </div>
+                            <p class="mb-1 small">$150.00 - Customer request</p>
+                            <small class="text-muted">Processed 5 days ago</small>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">TXN-007</h6>
+                                <small class="text-danger">Rejected</small>
+                            </div>
+                            <p class="mb-1 small">$200.00 - Policy violation</p>
+                            <small class="text-muted">Processed 1 week ago</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Help -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Need Help?</h6>
+                </div>
+                <div class="card-body">
+                    <p>If you have questions about processing refunds:</p>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-phone"></i> Call: 1-800-GOV2BIZ ext. 3</li>
+                        <li><i class="fas fa-envelope"></i> Email: refunds@gov2biz.com</li>
+                        <li><i class="fas fa-book"></i> Review: Refund Policy Guide</li>
+                    </ul>
+                    <div class="alert alert-light mt-3">
+                        <small><strong>Note:</strong> All refunds are subject to audit and compliance review.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

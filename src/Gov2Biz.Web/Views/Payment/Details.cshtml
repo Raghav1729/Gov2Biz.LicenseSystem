@@ -1,0 +1,369 @@
+@{
+    ViewData["Title"] = "Payment Details";
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Payment Details</h1>
+        <div>
+            <a href="@Url.Action("Index", "Payment")" class="btn btn-secondary me-2">
+                <i class="fas fa-arrow-left"></i> Back to Payments
+            </a>
+            <a href="@Url.Action("Receipt", "Payment", new { id = Model.Id })" class="btn btn-info me-2">
+                <i class="fas fa-receipt"></i> Receipt
+            </a>
+            @if ((ViewBag.UserRole == "Administrator" || ViewBag.UserRole == "AgencyStaff") && Model.Status == "Completed")
+            {
+                <a href="@Url.Action("Refund", "Payment", new { id = Model.Id })" class="btn btn-warning">
+                    <i class="fas fa-undo"></i> Refund
+                </a>
+            }
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Payment Information -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Payment Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Transaction ID</h6>
+                            <p><strong>@Model.TransactionId</strong></p>
+                            
+                            <h6 class="text-primary mt-3">License Number</h6>
+                            <p>
+                                <a href="@Url.Action("Details", "License", new { id = Model.LicenseId })" class="text-decoration-none">
+                                    @Model.LicenseNumber
+                                </a>
+                            </p>
+                            
+                            <h6 class="text-primary mt-3">Payment Amount</h6>
+                            <p class="h4 text-success">$@Model.Amount.ToString("F2")</p>
+                            
+                            <h6 class="text-primary mt-3">Payment Method</h6>
+                            <p>
+                                <span class="badge bg-@(Model.PaymentMethod == "Credit Card" ? "primary" : Model.PaymentMethod == "Bank Transfer" ? "info" : Model.PaymentMethod == "PayPal" ? "warning" : "secondary")">
+                                    @Model.PaymentMethod
+                                </span>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Payment Status</h6>
+                            <p>
+                                <span class="badge badge-@(Model.Status == "Completed" ? "success" : Model.Status == "Pending" ? "warning" : Model.Status == "Refunded" ? "danger" : "secondary")">
+                                    @Model.Status
+                                </span>
+                            </p>
+                            
+                            <h6 class="text-primary mt-3">Cardholder Name</h6>
+                            <p>@Model.CardholderName</p>
+                            
+                            <h6 class="text-primary mt-3">Created Date</h6>
+                            <p>
+                                @{
+                                    var createdDate = Model.CreatedDate;
+                                    if (createdDate != null)
+                                    {
+                                        try {
+                                            var date = (DateTime)createdDate;
+                                            @date.ToString("MMMM dd, yyyy at hh:mm tt")
+                                        }
+                                        catch {
+                                            <span class="text-muted">Not available</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Not available</span>
+                                    }
+                                }
+                            </p>
+                            
+                            <h6 class="text-primary mt-3">Processed Date</h6>
+                            <p>
+                                @{
+                                    var processedDate = Model.ProcessedDate;
+                                    if (processedDate != null)
+                                    {
+                                        try {
+                                            var date = (DateTime)processedDate;
+                                            @date.ToString("MMMM dd, yyyy at hh:mm tt")
+                                        }
+                                        catch {
+                                            <span class="text-muted">Not available</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Not available</span>
+                                    }
+                                }
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transaction Timeline -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Transaction Timeline</h6>
+                </div>
+                <div class="card-body">
+                    @{
+                        var baseCreatedDate = Model.CreatedDate;
+                    }
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content">
+                                <h6 class="timeline-title">Payment Initiated</h6>
+                                <p class="timeline-date">
+                                    @{
+                                        if (baseCreatedDate != null)
+                                        {
+                                            try {
+                                                var date = (DateTime)baseCreatedDate;
+                                                @date.ToString("MMMM dd, yyyy")
+                                            }
+                                            catch {
+                                                @DateTime.Now.ToString("MMMM dd, yyyy")
+                                            }
+                                        }
+                                        else
+                                        {
+                                            @DateTime.Now.ToString("MMMM dd, yyyy")
+                                        }
+                                    }
+                                </p>
+                                <p class="timeline-text">Payment transaction was initiated by @Model.CardholderName</p>
+                            </div>
+                        </div>
+                        
+                        @if (Model.Status == "Completed")
+                        {
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-success"></div>
+                                <div class="timeline-content">
+                                    <h6 class="timeline-title">Payment Processed</h6>
+                                    <p class="timeline-date">
+                                        @{
+                                            if (baseCreatedDate != null)
+                                            {
+                                                try {
+                                                    var date = (DateTime)baseCreatedDate;
+                                                    @date.AddMinutes(5).ToString("MMMM dd, yyyy")
+                                                }
+                                                catch {
+                                                    @DateTime.Now.AddMinutes(5).ToString("MMMM dd, yyyy")
+                                                }
+                                            }
+                                            else
+                                            {
+                                                @DateTime.Now.AddMinutes(5).ToString("MMMM dd, yyyy")
+                                            }
+                                        }
+                                    </p>
+                                    <p class="timeline-text">Payment was successfully processed and confirmed</p>
+                                </div>
+                            </div>
+                        }
+                        
+                        @if (Model.Status == "Pending")
+                        {
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-warning"></div>
+                                <div class="timeline-content">
+                                    <h6 class="timeline-title">Processing</h6>
+                                    <p class="timeline-date">
+                                        @{
+                                            if (baseCreatedDate != null)
+                                            {
+                                                try {
+                                                    var date = (DateTime)baseCreatedDate;
+                                                    @date.AddMinutes(1).ToString("MMMM dd, yyyy")
+                                                }
+                                                catch {
+                                                    @DateTime.Now.AddMinutes(1).ToString("MMMM dd, yyyy")
+                                                }
+                                            }
+                                            else
+                                            {
+                                                @DateTime.Now.AddMinutes(1).ToString("MMMM dd, yyyy")
+                                            }
+                                        }
+                                    </p>
+                                    <p class="timeline-text">Payment is being processed by the payment gateway</p>
+                                </div>
+                            </div>
+                        }
+                        
+                        @if (Model.Status == "Refunded")
+                        {
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-danger"></div>
+                                <div class="timeline-content">
+                                    <h6 class="timeline-title">Payment Refunded</h6>
+                                    <p class="timeline-date">
+                                        @{
+                                            if (baseCreatedDate != null)
+                                            {
+                                                try {
+                                                    var date = (DateTime)baseCreatedDate;
+                                                    @date.AddDays(1).ToString("MMMM dd, yyyy")
+                                                }
+                                                catch {
+                                                    @DateTime.Now.AddDays(1).ToString("MMMM dd, yyyy")
+                                                }
+                                            }
+                                            else
+                                            {
+                                                @DateTime.Now.AddDays(1).ToString("MMMM dd, yyyy")
+                                            }
+                                        }
+                                    </p>
+                                    <p class="timeline-text">Payment was refunded to the original payment method</p>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <!-- Actions -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="@Url.Action("Receipt", "Payment", new { id = Model.Id })" class="btn btn-info">
+                            <i class="fas fa-receipt"></i> Download Receipt
+                        </a>
+                        
+                        <button class="btn btn-outline-primary" disabled>
+                            <i class="fas fa-envelope"></i> Email Receipt
+                        </button>
+                        
+                        @if ((ViewBag.UserRole == "Administrator" || ViewBag.UserRole == "AgencyStaff") && Model.Status == "Completed")
+                        {
+                            <a href="@Url.Action("Refund", "Payment", new { id = Model.Id })" class="btn btn-warning">
+                                <i class="fas fa-undo"></i> Process Refund
+                            </a>
+                        }
+                        
+                        <button class="btn btn-outline-secondary" disabled>
+                            <i class="fas fa-print"></i> Print Receipt
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Summary -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Payment Summary</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-6">Subtotal:</div>
+                        <div class="col-6 text-right">$@Model.Amount.ToString("F2")</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-6">Processing Fee:</div>
+                        <div class="col-6 text-right">$0.00</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-6">Tax:</div>
+                        <div class="col-6 text-right">$0.00</div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-6"><strong>Total:</strong></div>
+                        <div class="col-6 text-right"><strong>$@Model.Amount.ToString("F2")</strong></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Information -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Security Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <i class="fas fa-shield-alt fa-3x text-success"></i>
+                    </div>
+                    <h6 class="text-center">Secure Transaction</h6>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success"></i> SSL Encrypted</li>
+                        <li><i class="fas fa-check text-success"></i> Verified by Visa</li>
+                        <li><i class="fas fa-check text-success"></i> Mastercard SecureCode</li>
+                        <li><i class="fas fa-check text-success"></i> PCI DSS Compliant</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+    
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 15px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #e3e6f0;
+    }
+    
+    .timeline-item {
+        position: relative;
+        margin-bottom: 30px;
+    }
+    
+    .timeline-marker {
+        position: absolute;
+        left: -23px;
+        top: 0;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid white;
+    }
+    
+    .timeline-content {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .timeline-title {
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+    
+    .timeline-date {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-bottom: 5px;
+    }
+    
+    .timeline-text {
+        font-size: 0.875rem;
+        margin-bottom: 0;
+    }
+</style>
