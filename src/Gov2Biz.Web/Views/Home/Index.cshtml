@@ -40,7 +40,7 @@
                     <div class="d-grid gap-2">
                         <button class="btn btn-primary" disabled>View Licenses</button>
                         <button class="btn btn-secondary" disabled>Create License</button>
-                        <button class="btn btn-info" disabled>Dashboard</button>
+                        <a href="@Url.Action("Index", "Dashboard")" class="btn btn-info">Dashboard</a>
                         <form asp-controller="Auth" asp-action="Logout" method="post">
                             <button type="submit" class="btn btn-outline-danger w-100">Logout</button>
                         </form>

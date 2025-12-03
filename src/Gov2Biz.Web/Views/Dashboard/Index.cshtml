@@ -1,0 +1,338 @@
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="container-fluid">
+    <!-- Dashboard Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">@Model.Title</h1>
+        <div class="text-right">
+            <span class="text-muted">Welcome back, @ViewBag.UserFullName</span>
+            @if (!string.IsNullOrEmpty(ViewBag.TenantId))
+            {
+                <br /><small class="text-muted">Tenant: @ViewBag.TenantId</small>
+            }
+        </div>
+    </div>
+
+    @if (ViewBag.UserRole == "Administrator")
+    {
+        <!-- Administrator Dashboard -->
+        <div class="row">
+            <!-- Statistics Cards -->
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-primary shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Licenses</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalLicenses</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-success shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Active Licenses</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.ActiveLicenses</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-warning shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Pending Applications</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.PendingApplications</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-clock fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-info shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Total Agencies</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalAgencies</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-building fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Health and Recent Activity -->
+        <div class="row">
+            <div class="col-lg-6 mb-4">
+                <div class="card shadow">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">System Health</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center">
+                            <div class="text-success font-weight-bold">@Model.SystemHealth</div>
+                            <small>All systems operational</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6 mb-4">
+                <div class="card shadow">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Recent Activity</h6>
+                    </div>
+                    <div class="card-body">
+                        @foreach (var activity in Model.RecentActivity)
+                        {
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <div>@activity.Action</div>
+                                    <small class="text-muted">by @activity.User</small>
+                                </div>
+                                <small class="text-muted">@activity.Time</small>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (ViewBag.UserRole == "AgencyStaff")
+    {
+        <!-- Agency Staff Dashboard -->
+        <div class="row">
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-primary shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Licenses</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalLicenses</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-success shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Active Licenses</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.ActiveLicenses</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-warning shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Pending</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.PendingApplications</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-clock fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-info shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Avg Processing</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.ProcessingTime</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-hourglass-half fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Agency Info and Activity -->
+        <div class="row">
+            <div class="col-lg-6 mb-4">
+                <div class="card shadow">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Agency Information</h6>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">@Model.AgencyName</h5>
+                        <p class="card-text">Tenant ID: @ViewBag.TenantId</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6 mb-4">
+                <div class="card shadow">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Recent Activity</h6>
+                    </div>
+                    <div class="card-body">
+                        @foreach (var activity in Model.RecentActivity)
+                        {
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <div>@activity.Action</div>
+                                    <small class="text-muted">by @activity.User</small>
+                                </div>
+                                <small class="text-muted">@activity.Time</small>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (ViewBag.UserRole == "Applicant")
+    {
+        <!-- Applicant Dashboard -->
+        <div class="row">
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-primary shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">My Applications</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.MyApplications</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-file-alt fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-success shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Active Licenses</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.ActiveLicenses</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-warning shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Pending</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.PendingApplications</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-clock fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-info shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Renewals Due</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.RenewalsDue</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-sync fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Next Action and Application Status -->
+        <div class="row">
+            <div class="col-lg-6 mb-4">
+                <div class="card shadow">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Next Action Required</h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">@Model.NextAction</p>
+                        <button class="btn btn-primary btn-sm">Take Action</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6 mb-4">
+                <div class="card shadow">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">My Applications</h6>
+                    </div>
+                    <div class="card-body">
+                        @foreach (var activity in Model.RecentActivity)
+                        {
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <div>@activity.Action</div>
+                                    <small class="text-muted">@activity.Reference</small>
+                                </div>
+                                <div class="text-right">
+                                    <span class="badge badge-@(activity.Status == "Active" ? "success" : activity.Status == "Under Review" ? "warning" : "info")">@activity.Status</span>
+                                    <br /><small class="text-muted">@activity.Time</small>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

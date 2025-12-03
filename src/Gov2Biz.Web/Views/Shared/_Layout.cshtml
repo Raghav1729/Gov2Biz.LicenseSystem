@@ -21,29 +21,69 @@
                 </button>
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <ul class="navbar-nav me-auto">
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Home" asp-action="Index">
-                                <i class="fas fa-home"></i> Home
-                            </a>
-                        </li>
+                        <!-- Navigation items removed -->
                     </ul>
-                    <ul class="navbar-nav">
+                    <ul class="navbar-nav ms-auto">
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-user"></i> @User.FindFirst("FullName")?.Value ?? User.Identity?.Name
+                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <span class="mr-2 d-none d-lg-inline text-white small">@User.FindFirst("FullName")?.Value</span>
+                                @{
+                                    var fullName = User.FindFirst("FullName")?.Value ?? "User";
+                                    var initials = string.Join("", fullName.Split(' ').Take(2).Select(w => w.FirstOrDefault().ToString().ToUpper()));
+                                }
+                                @if (!string.IsNullOrEmpty(fullName))
+                                {
+                                    <div class="rounded-circle bg-light text-primary d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; font-weight: bold;">
+                                        @initials
+                                    </div>
+                                }
                             </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#"><i class="fas fa-user-circle"></i> Profile</a></li>
-                                <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Settings</a></li>
+                            <!-- Dropdown - User Information -->
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <li><a class="dropdown-item" href="#">
+                                    <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
+                                    Profile
+                                </a></li>
+                                <li><a class="dropdown-item" href="#">
+                                    <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
+                                    Settings
+                                </a></li>
+                                <li><a class="dropdown-item" href="#">
+                                    <i class="fas fa-list fa-sm fa-fw mr-2 text-gray-400"></i>
+                                    Activity Log
+                                </a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
-                                    <form asp-controller="Auth" asp-action="Logout" method="post" class="d-inline">
+                                    <form asp-controller="Auth" asp-action="Logout" method="post">
                                         <button type="submit" class="dropdown-item">
-                                            <i class="fas fa-sign-out-alt"></i> Logout
+                                            <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
+                                            Logout
                                         </button>
                                     </form>
                                 </li>
                             </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    }
+    else
+    {
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+            <div class="container-fluid">
+                <a class="navbar-brand" asp-controller="Home" asp-action="Index">
+                    <i class="fas fa-building"></i> Gov2Biz License System
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ml-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="@Url.Action("Login", "Auth")">
+                                <i class="fas fa-sign-in-alt"></i> Login
+                            </a>
                         </li>
                     </ul>
                 </div>
