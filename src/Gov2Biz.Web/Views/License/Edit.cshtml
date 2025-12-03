@@ -1,0 +1,388 @@
+@{
+    var statusOptions = new[]
+    {
+        new { Value = "Pending", Text = "Pending" },
+        new { Value = "Under Review", Text = "Under Review" },
+        new { Value = "Active", Text = "Active" },
+        new { Value = "Expired", Text = "Expired" },
+        new { Value = "Suspended", Text = "Suspended" },
+        new { Value = "Revoked", Text = "Revoked" }
+    };
+    
+    var licenseTypeOptions = new[]
+    {
+        new { Value = "Business License", Text = "Business License" },
+        new { Value = "Health Permit", Text = "Health Permit" },
+        new { Value = "Food Service License", Text = "Food Service License" },
+        new { Value = "Professional License", Text = "Professional License" },
+        new { Value = "Building Permit", Text = "Building Permit" },
+        new { Value = "Environmental Permit", Text = "Environmental Permit" }
+    };
+}
+
+@{
+    ViewData["Title"] = "Edit License";
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Edit License</h1>
+        <div>
+            <a href="@Url.Action("Details", "License", new { id = Model.Id })" class="btn btn-info">
+                <i class="fas fa-eye"></i> View Details
+            </a>
+            <a href="@Url.Action("Index", "License")" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Edit License Information</h6>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Edit" method="post">
+                        <input type="hidden" name="Id" value="@Model.Id" />
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="LicenseNumber" class="form-label">License Number</label>
+                                    <input type="text" class="form-control" id="LicenseNumber" value="@Model.LicenseNumber" readonly />
+                                    <small class="form-text text-muted">License number cannot be changed</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="Status" class="form-label">Status *</label>
+                                    <select class="form-select" id="Status" name="Status" required>
+                                        @foreach (var option in statusOptions)
+                                        {
+                                            if (Model.Status == option.Value)
+                                            {
+                                                <option value="@option.Value" selected>@option.Text</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="@option.Value">@option.Text</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="LicenseType" class="form-label">License Type *</label>
+                                    <select class="form-select" id="LicenseType" name="LicenseType" required>
+                                        @foreach (var option in licenseTypeOptions)
+                                        {
+                                            if (Model.LicenseType == option.Value)
+                                            {
+                                                <option value="@option.Value" selected>@option.Text</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="@option.Value">@option.Text</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="ExpiryDate" class="form-label">Expiry Date</label>
+                                    <input type="date" class="form-control" id="ExpiryDate" name="ExpiryDate" 
+                                           value="@(Model.ExpiryDate?.ToString("yyyy-MM-dd") ?? "")" />
+                                    <small class="form-text text-muted">Leave blank if no expiry date</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="Description" class="form-label">Description</label>
+                            <textarea class="form-control" id="Description" name="Description" rows="4" placeholder="Enter license description or purpose">@Model.Description</textarea>
+                        </div>
+
+                        <hr>
+
+                        <h6 class="text-primary mb-3">Applicant Information</h6>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="ApplicantName" class="form-label">Applicant Name *</label>
+                                    <input type="text" class="form-control" id="ApplicantName" name="ApplicantName" required value="@Model.ApplicantName" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="ApplicantEmail" class="form-label">Email Address *</label>
+                                    <input type="email" class="form-control" id="ApplicantEmail" name="ApplicantEmail" required value="@Model.ApplicantEmail" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="BusinessName" class="form-label">Business Name</label>
+                            <input type="text" class="form-control" id="BusinessName" name="BusinessName" value="@Model.BusinessName" placeholder="Enter business name (if applicable)" />
+                        </div>
+
+                        <hr>
+
+                        <h6 class="text-primary mb-3">Dates</h6>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="IssuedDate" class="form-label">Issued Date</label>
+                                    <input type="date" class="form-control" id="IssuedDate" name="IssuedDate" 
+                                           value="@(Model.IssuedDate?.ToString("yyyy-MM-dd") ?? "")" />
+                                    <small class="form-text text-muted">Date when license was issued</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Quick Actions</label>
+                                    <div class="d-grid gap-2">
+                                        @if (Model.Status != "Active")
+                                        {
+                                            <button type="button" class="btn btn-success" onclick="activateLicense()">
+                                                <i class="fas fa-check"></i> Activate License
+                                            </button>
+                                        }
+                                        @if (Model.Status == "Active")
+                                        {
+                                            <button type="button" class="btn btn-warning" onclick="suspendLicense()">
+                                                <i class="fas fa-pause"></i> Suspend License
+                                            </button>
+                                        }
+                                        <button type="button" class="btn btn-info" onclick="sendNotification()">
+                                            <i class="fas fa-envelope"></i> Send Notification
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                            <a href="@Url.Action("Details", "License", new { id = Model.Id })" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <!-- Current Status -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Current Status</h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center">
+                        <span class="badge badge-@(Model.Status == "Active" ? "success" : Model.Status == "Pending" || Model.Status == "Under Review" ? "warning" : Model.Status == " Vaccinated" ? "danger" : "info")" style="font-size: 1rem;">
+                            @Model.Status
+                        </span>
+                    </div>
+                    <hr>
+                    <p><strong>License Number:</strong> @Model.LicenseNumber</p>
+                    <p><strong>Type:</strong> @Model.LicenseType</p>
+                    <p><strong>Agency:</strong> @ViewBag.TenantId</p>
+                    @{
+                        var issuedDate = Model.IssuedDate;
+                        if (issuedDate != null)
+                        {
+                            try {
+                                var date = (DateTime)issuedDate;
+                                <p><strong>Issued:</strong> @date.ToString("MMMM dd, yyyy")</p>
+                            }
+                            catch {
+                                <p><strong>Issued:</strong> Not available</p>
+                            }
+                        }
+                        else
+                        {
+                            <p><strong>Issued:</strong> Not available</p>
+                        }
+                    }
+                    @{
+                        var expiryDate = Model.ExpiryDate;
+                        if (expiryDate != null)
+                        {
+                            try {
+                                var date = (DateTime)expiryDate;
+                                <p><strong>Expires:</strong> @date.ToString("MMMM dd, yyyy")</p>
+                            }
+                            catch {
+                                <p><strong>Expires:</strong> Not available</p>
+                            }
+                        }
+                        else
+                        {
+                            <p><strong>Expires:</strong> Not available</p>
+                        }
+                    }
+                </div>
+            </div>
+
+            <!-- Status Change History -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Status History</h6>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-info"></div>
+                            <div class="timeline-content">
+                                <h6 class="timeline-title">Created</h6>
+                                <p class="timeline-date">@(Model.IssuedDate?.ToString("MMM dd, yyyy") ?? DateTime.Now.ToString("MMM dd, yyyy"))</p>
+                            </div>
+                        </div>
+                        
+                        @if (Model.Status != "Pending")
+                        {
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-warning"></div>
+                                <div class="timeline-content">
+                                    <h6 class="timeline-title">Status Changed</h6>
+                                    <p class="timeline-date">@(Model.IssuedDate?.AddDays(1).ToString("MMM dd, yyyy") ?? DateTime.Now.AddDays(1).ToString("MMM dd, yyyy"))</p>
+                                    <p class="timeline-text">Status changed to @Model.Status</p>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Help Information -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Status Guidelines</h6>
+                </div>
+                <div class="card-body">
+                    <h6 class="text-primary">Status Meanings</h6>
+                    <ul class="list-unstyled">
+                        <li><span class="badge badge-warning me-2">Pending</span> Application received</li>
+                        <li><span class="badge badge-warning me-2">Under Review</span> Being processed</li>
+                        <li><span class="badge badge-success me-2">Active</span> Currently valid</li>
+                        <li><span class="badge badge-danger me-2">Expired</span> Past expiry date</li>
+                        <li><span class="badge badge-warning me-2">Suspended</span> Temporarily suspended</li>
+                        <li><span class="badge badge-danger me-2">Revoked</span> Permanently revoked</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 40px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e9ecef;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -25px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+}
+
+.timeline-content {
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 8px;
+    border-left: 4px solid #4e73df;
+}
+
+.timeline-title {
+    margin: 0 0 5px 0;
+    font-weight: 600;
+    color: #5a5c69;
+    font-size: 0.875rem;
+}
+
+.timeline-date {
+    margin: 0 0 5px 0;
+    font-size: 0.75rem;
+    color: #858796;
+}
+
+.timeline-text {
+    margin: 0;
+    color: #5a5c69;
+    font-size: 0.75rem;
+}
+</style>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Set minimum expiry date to today
+            var today = new Date().toISOString().split('T')[0];
+            $('#ExpiryDate').attr('min', today);
+            
+            // Set maximum issued date to today
+            $('#IssuedDate').attr('max', today);
+        });
+
+        function activateLicense() {
+            if (confirm('Are you sure you want to activate this license?')) {
+                $('#Status').val('Active');
+                // Set issued date to today if not set
+                if (!$('#IssuedDate').val()) {
+                    $('#IssuedDate').val(new Date().toISOString().split('T')[0]);
+                }
+                // Set expiry date to 1 year from now if not set
+                if (!$('#ExpiryDate').val()) {
+                    var expiryDate = new Date();
+                    expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+                    $('#ExpiryDate').val(expiryDate.toISOString().split('T')[0]);
+                }
+                $('form').submit();
+            }
+        }
+
+        function suspendLicense() {
+            if (confirm('Are you sure you want to suspend this license?')) {
+                $('#Status').val('Suspended');
+                $('form').submit();
+            }
+        }
+
+        function sendNotification() {
+            alert('Notification functionality will be implemented in the next phase.');
+        }
+    </script>
+}

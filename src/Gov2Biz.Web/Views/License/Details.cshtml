@@ -1,0 +1,320 @@
+@{
+    ViewData["Title"] = "License Details";
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">License Details</h1>
+        <div>
+            <a href="@Url.Action("Index", "License")" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+            @if (ViewBag.UserRole == "Administrator" || ViewBag.UserRole == "AgencyStaff")
+            {
+                <a href="@Url.Action("Edit", "License", new { id = Model.Id })" class="btn btn-warning">
+                    <i class="fas fa-edit"></i> Edit
+                </a>
+            }
+        </div>
+    </div>
+
+    <!-- License Information -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">License Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">License Number</h6>
+                            <p class="font-weight-bold">@Model.LicenseNumber</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Status</h6>
+                            <p>
+                                <span class="badge badge-@(Model.Status == "Active" ? "success" : Model.Status == "Pending" || Model.Status == "Under Review" ? "warning" : Model.Status == "Expired" ? "danger" : "info")">
+                                    @Model.Status
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">License Type</h6>
+                            <p>@Model.LicenseType</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Agency</h6>
+                            <p>@Model.AgencyName</p>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Issued Date</h6>
+                            <p>
+                                @{
+                                    var issuedDate = Model.IssuedDate;
+                                    if (issuedDate != null)
+                                    {
+                                        try {
+                                            var date = (DateTime)issuedDate;
+                                            @date.ToString("MMMM dd, yyyy")
+                                        }
+                                        catch {
+                                            <span class="text-muted">Not issued</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Not issued</span>
+                                    }
+                                }
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Expiry Date</h6>
+                            <p>
+                                @{
+                                    var expiryDate = Model.ExpiryDate;
+                                    if (expiryDate != null)
+                                    {
+                                        try {
+                                            var date = (DateTime)expiryDate;
+                                            @date.ToString("MMMM dd, yyyy")
+                                        }
+                                        catch {
+                                            <span class="text-muted">No expiry date</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">No expiry date</span>
+                                    }
+                                }
+                            </p>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.Description))
+                    {
+                        <hr>
+                        <div class="row">
+                            <div class="col-12">
+                                <h6 class="text-primary">Description</h6>
+                                <p>@Model.Description</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <!-- Applicant Information -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Applicant Information</h6>
+                </div>
+                <div class="card-body">
+                    <h6 class="text-primary">Name</h6>
+                    <p class="font-weight-bold">@Model.ApplicantName</p>
+                    
+                    @if (!string.IsNullOrEmpty(Model.ApplicantEmail))
+                    {
+                        <h6 class="text-primary mt-3">Email</h6>
+                        <p>@Model.ApplicantEmail</p>
+                    }
+                    
+                    <h6 class="text-primary mt-3">Business Name</h6>
+                    <p>@Model.BusinessName</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Timeline -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Status Timeline</h6>
+        </div>
+        <div class="card-body">
+            @{
+                var baseIssuedDate = Model.IssuedDate;
+            }
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-marker bg-success"></div>
+                    <div class="timeline-content">
+                        <h6 class="timeline-title">Application Submitted</h6>
+                        <p class="timeline-date">
+                            @{
+                                if (baseIssuedDate != null)
+                                {
+                                    try {
+                                        var date = (DateTime)baseIssuedDate;
+                                        @date.ToString("MMMM dd, yyyy")
+                                    }
+                                    catch {
+                                        @DateTime.Now.ToString("MMMM dd, yyyy")
+                                    }
+                                }
+                                else
+                                {
+                                    @DateTime.Now.ToString("MMMM dd, yyyy")
+                                }
+                            }
+                        </p>
+                        <p class="timeline-text">License application was submitted by @Model.ApplicantName</p>
+                    </div>
+                </div>
+                
+                @if (Model.Status == "Pending" || Model.Status == "Under Review" || Model.Status == "Active" || Model.Status == "Expired")
+                {
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-warning"></div>
+                        <div class="timeline-content">
+                            <h6 class="timeline-title">Under Review</h6>
+                            <p class="timeline-date">
+                                @{
+                                    if (baseIssuedDate != null)
+                                    {
+                                        try {
+                                            var date = (DateTime)baseIssuedDate;
+                                            @date.AddDays(1).ToString("MMMM dd, yyyy")
+                                        }
+                                        catch {
+                                            @DateTime.Now.AddDays(1).ToString("MMMM dd, yyyy")
+                                        }
+                                    }
+                                    else
+                                    {
+                                        @DateTime.Now.AddDays(1).ToString("MMMM dd, yyyy")
+                                    }
+                                }
+                            </p>
+                            <p class="timeline-text">Application is being reviewed by @Model.AgencyName</p>
+                        </div>
+                    </div>
+                }
+                
+                @if (Model.Status == "Active" || Model.Status == "Expired")
+                {
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-info"></div>
+                        <div class="timeline-content">
+                            <h6 class="timeline-title">License Issued</h6>
+                            <p class="timeline-date">
+                                @{
+                                    if (baseIssuedDate != null)
+                                    {
+                                        try {
+                                            var date = (DateTime)baseIssuedDate;
+                                            @date.ToString("MMMM dd, yyyy")
+                                        }
+                                        catch {
+                                            @DateTime.Now.ToString("MMMM dd, yyyy")
+                                        }
+                                    }
+                                    else
+                                    {
+                                        @DateTime.Now.ToString("MMMM dd, yyyy")
+                                    }
+                                }
+                            </p>
+                            <p class="timeline-text">License was approved and issued</p>
+                        </div>
+                    </div>
+                }
+                
+                @if (Model.Status == "Expired")
+                {
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-danger"></div>
+                        <div class="timeline-content">
+                            <h6 class="timeline-title">License Expired</h6>
+                            <p class="timeline-date">
+                                @{
+                                    var expiryDate3 = Model.ExpiryDate;
+                                    if (expiryDate3 != null)
+                                    {
+                                        try {
+                                            var date = (DateTime)expiryDate3;
+                                            @date.ToString("MMMM dd, yyyy")
+                                        }
+                                        catch {
+                                            <span>Unknown date</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span>Unknown date</span>
+                                    }
+                                }
+                            </p>
+                            <p class="timeline-text">License has expired and needs renewal</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 40px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e9ecef;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 30px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -25px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+}
+
+.timeline-content {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #4e73df;
+}
+
+.timeline-title {
+    margin: 0 0 5px 0;
+    font-weight: 600;
+    color: #5a5c69;
+}
+
+.timeline-date {
+    margin: 0 0 10px 0;
+    font-size: 0.875rem;
+    color: #858796;
+}
+
+.timeline-text {
+    margin: 0;
+    color: #5a5c69;
+}
+</style>

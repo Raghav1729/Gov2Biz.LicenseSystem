@@ -1,0 +1,171 @@
+@{
+    ViewData["Title"] = "Create License";
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Create New License</h1>
+        <a href="@Url.Action("Index", "License")" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to List
+        </a>
+    </div>
+
+    <!-- Agency Information -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Agency Information</h6>
+        </div>
+        <div class="card-body">
+            <p><strong>Agency:</strong> @ViewBag.TenantId</p>
+            <p><strong>Processing Time:</strong> 3-5 business days</p>
+            <p><strong>Current Status:</strong> Ready to receive applications</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">License Information</h6>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="LicenseType" class="form-label">License Type *</label>
+                                    <select class="form-select" id="LicenseType" name="LicenseType" required>
+                                        <option value="">Select License Type</option>
+                                        <option value="Business License">Business License</option>
+                                        <option value="Health Permit">Health Permit</option>
+                                        <option value="Food Service License">Food Service License</option>
+                                        <option value="Professional License">Professional License</option>
+                                        <option value="Building Permit">Building Permit</option>
+                                        <option value="Environmental Permit">Environmental Permit</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="ApplicantName" class="form-label">Applicant Name *</label>
+                                    <input type="text" class="form-control" id="ApplicantName" name="ApplicantName" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="ApplicantEmail" class="form-label">Applicant Email *</label>
+                                    <input type="email" class="form-control" id="ApplicantEmail" name="ApplicantEmail" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="BusinessName" class="form-label">Business Name</label>
+                                    <input type="text" class="form-control" id="BusinessName" name="BusinessName">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="ExpiryDate" class="form-label">Expiry Date</label>
+                                    <input type="date" class="form-control" id="ExpiryDate" name="ExpiryDate">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="Description" class="form-label">Description</label>
+                            <textarea class="form-control" id="Description" name="Description" rows="4" placeholder="Provide details about the license purpose..."></textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="@Url.Action("Index", "License")" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Create License
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Required documents based on license type
+            const requiredDocuments = {
+                'Business License': [
+                    'Business Registration Certificate',
+                    'Tax Clearance Certificate',
+                    'Proof of Address',
+                    'Owner Identification'
+                ],
+                'Health Permit': [
+                    'Health Inspection Report',
+                    'Food Handler Certificates',
+                    'Business License',
+                    'Sanitation Plan'
+                ],
+                'Food Service License': [
+                    'Food Safety Certificate',
+                    'Kitchen Layout Plan',
+                    'Health Department Approval',
+                    'Business Registration'
+                ],
+                'Professional License': [
+                    'Professional Certification',
+                    'Educational Qualifications',
+                    'Experience Certificates',
+                    'Background Check'
+                ],
+                'Building Permit': [
+                    'Building Plans',
+                    'Architect Approval',
+                    'Land Use Permit',
+                    'Structural Analysis'
+                ],
+                'Environmental Permit': [
+                    'Environmental Impact Assessment',
+                    'Waste Management Plan',
+                    'Compliance Certificates',
+                    'Site Plan'
+                ]
+            };
+
+            // Update required documents when license type changes
+            $('#LicenseType').on('change', function() {
+                const licenseType = $(this).val();
+                const documentsDiv = $('#requiredDocuments');
+                
+                if (licenseType && requiredDocuments[licenseType]) {
+                    const documents = requiredDocuments[licenseType];
+                    let html = '<h6 class="text-warning">Documents Required:</h6><ul class="list-unstyled">';
+                    
+                    documents.forEach(function(doc) {
+                        html += `<li><i class="fas fa-file-alt text-warning"></i> ${doc}</li>`;
+                    });
+                    
+                    html += '</ul><small class="form-text text-muted">These documents will need to be uploaded after creating the license.</small>';
+                    documentsDiv.html(html);
+                } else {
+                    documentsDiv.html('');
+                }
+            });
+
+            // Set minimum expiry date to today
+            var today = new Date().toISOString().split('T')[0];
+            $('#ExpiryDate').attr('min', today);
+        });
+    </script>
+}

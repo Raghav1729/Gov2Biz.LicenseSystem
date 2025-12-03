@@ -38,8 +38,11 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <button class="btn btn-primary" disabled>View Licenses</button>
-                        <button class="btn btn-secondary" disabled>Create License</button>
+                        <a href="@Url.Action("Index", "License")" class="btn btn-primary">View Licenses</a>
+                        @if (ViewBag.UserRole == "Administrator" || ViewBag.UserRole == "AgencyStaff")
+                        {
+                            <a href="@Url.Action("Create", "License")" class="btn btn-secondary">Create License</a>
+                        }
                         <a href="@Url.Action("Index", "Dashboard")" class="btn btn-info">Dashboard</a>
                         <form asp-controller="Auth" asp-action="Logout" method="post">
                             <button type="submit" class="btn btn-outline-danger w-100">Logout</button>
