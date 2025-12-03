@@ -17,8 +17,8 @@ services:
 
   gateway:
     build:
-      context: ./src/Gov2Biz.Gateway
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./src/Gov2Biz.Gateway/Dockerfile
     container_name: gateway
     ports:
       - "5001:8080"
@@ -32,8 +32,8 @@ services:
 
   licenseservice:
     build:
-      context: ./src/Gov2Biz.LicenseService
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./src/Gov2Biz.LicenseService/Dockerfile
     container_name: licenseservice
     ports:
       - "5002:8080"
@@ -47,8 +47,8 @@ services:
 
   documentservice:
     build:
-      context: ./src/Gov2Biz.DocumentService
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./src/Gov2Biz.DocumentService/Dockerfile
     container_name: documentservice
     ports:
       - "5003:8080"
@@ -62,8 +62,8 @@ services:
 
   notificationservice:
     build:
-      context: ./src/Gov2Biz.NotificationService
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./src/Gov2Biz.NotificationService/Dockerfile
     container_name: notificationservice
     ports:
       - "5004:8080"
@@ -77,8 +77,8 @@ services:
 
   paymentservice:
     build:
-      context: ./src/Gov2Biz.PaymentService
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./src/Gov2Biz.PaymentService/Dockerfile
     container_name: paymentservice
     ports:
       - "5005:8080"
@@ -92,11 +92,11 @@ services:
 
   web:
     build:
-      context: ./src/Gov2Biz.Web
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./src/Gov2Biz.Web/Dockerfile
     container_name: web
     ports:
-      - "5000:8080"
+      - "5006:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ApiGateway__BaseUrl=http://gateway:8080
