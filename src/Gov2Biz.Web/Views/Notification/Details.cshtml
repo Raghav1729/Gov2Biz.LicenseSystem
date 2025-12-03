@@ -1,0 +1,240 @@
+@{
+    ViewData["Title"] = "Notification Details";
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Notification Details</h1>
+        <div>
+            <a href="@Url.Action("Index", "Notification")" class="btn btn-secondary me-2">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+            @if (ViewBag.UserRole == "Administrator" || ViewBag.UserRole == "AgencyStaff")
+            {
+                <form asp-action="Delete" asp-route-id="@Model.Id" method="post" style="display: inline;">
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this notification?')">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </form>
+            }
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Notification Content -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Message Content</h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info" role="alert">
+                        <h5 class="alert-heading">@Model.Type</h5>
+                        <p class="mb-0">@Model.Message</p>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Recipient</h6>
+                            <p>@Model.Recipient</p>
+                            
+                            <h6 class="text-primary mt-3">Priority</h6>
+                            <p>
+                                <span class="badge badge-@(Model.Priority == "High" ? "danger" : Model.Priority == "Medium" ? "warning" : "success")">
+                                    @Model.Priority
+                                </span>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Created Date</h6>
+                            <p>
+                                @{
+                                    var createdDate = Model.CreatedDate;
+                                    if (createdDate != null)
+                                    {
+                                        try {
+                                            var date = (DateTime)createdDate;
+                                            @date.ToString("MMMM dd, yyyy at hh:mm tt")
+                                        }
+                                        catch {
+                                            <span class="text-muted">Not available</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Not available</span>
+                                    }
+                                }
+                            </p>
+                            
+                            <h6 class="text-primary mt-3">Status</h6>
+                            <p>
+                                @if (Model.IsRead)
+                                {
+                                    <span class="badge bg-success">Read</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-primary">Unread</span>
+                                }
+                            </p>
+                        </div>
+                    </div>
+
+                    @if (Model.LicenseNumber != null)
+                    {
+                        <div class="mt-4">
+                            <h6 class="text-primary">Related License</h6>
+                            <div class="alert alert-light">
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-grow-1">
+                                        <strong>@Model.LicenseNumber</strong>
+                                        <br>
+                                        <small class="text-muted">Click to view license details</small>
+                                    </div>
+                                    <div>
+                                        <a href="@Url.Action("Details", "License", new { id = Model.LicenseId })" class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-eye"></i> View License
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Delivery Information -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Delivery Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <i class="fas fa-envelope fa-3x text-primary mb-2"></i>
+                                <h6>Email</h6>
+                                <p class="text-success">Delivered</p>
+                                <small class="text-muted">Sent to @Model.Recipient</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <i class="fas fa-sms fa-3x text-info mb-2"></i>
+                                <h6>SMS</h6>
+                                <p class="text-muted">Not Sent</p>
+                                <small class="text-muted">SMS notifications disabled</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <i class="fas fa-bell fa-3x text-warning mb-2"></i>
+                                <h6>In-App</h6>
+                                <p class="text-success">Delivered</p>
+                                <small class="text-muted">Visible in dashboard</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <!-- Actions -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        @if (!Model.IsRead)
+                        {
+                            <form asp-action="MarkAsRead" asp-route-id="@Model.Id" method="post">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-check"></i> Mark as Read
+                                </button>
+                            </form>
+                        }
+                        
+                        <button class="btn btn-outline-primary" disabled>
+                            <i class="fas fa-reply"></i> Reply
+                        </button>
+                        
+                        <button class="btn btn-outline-info" disabled>
+                            <i class="fas fa-forward"></i> Forward
+                        </button>
+                        
+                        @if (ViewBag.UserRole == "Administrator" || ViewBag.UserRole == "AgencyStaff")
+                        {
+                            <button class="btn btn-outline-warning" disabled>
+                                <i class="fas fa-copy"></i> Duplicate
+                            </button>
+                        }
+                        
+                        <button class="btn btn-outline-secondary" disabled>
+                            <i class="fas fa-print"></i> Print
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Related Notifications -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Related Notifications</h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">Document Upload Confirmation</h6>
+                                <small>2 days ago</small>
+                            </div>
+                            <p class="mb-1 small">Your document has been successfully uploaded</p>
+                            <small class="text-muted">License: @Model.LicenseNumber</small>
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">Application Status Update</h6>
+                                <small>5 days ago</small>
+                            </div>
+                            <p class="mb-1 small">Your application is currently under review</p>
+                            <small class="text-muted">License: @Model.LicenseNumber</small>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Notification Statistics</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h4 class="text-primary">12</h4>
+                            <small class="text-muted">Total Sent</small>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-success">8</h4>
+                            <small class="text-muted">Delivered</small>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h4 class="text-info">3</h4>
+                            <small class="text-muted">Pending</small>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-warning">1</h4>
+                            <small class="text-muted">Failed</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,188 @@
+@{
+    ViewData["Title"] = "Send Notification";
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Send Notification</h1>
+        <a href="@Url.Action("Index", "Notification")" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to List
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Notification Details</h6>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" method="post">
+                        <div class="form-group mb-3">
+                            <label for="notificationType" class="form-label">Notification Type *</label>
+                            <select class="form-select" id="notificationType" name="notificationType" required>
+                                <option value="">Select Type</option>
+                                <option value="License Application">License Application</option>
+                                <option value="License Status">License Status</option>
+                                <option value="License Renewal">License Renewal</option>
+                                <option value="Document Review">Document Review</option>
+                                <option value="Document Upload">Document Upload</option>
+                                <option value="Payment Reminder">Payment Reminder</option>
+                                <option value="System">System</option>
+                                <option value="General">General</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="recipientType" class="form-label">Recipient Type *</label>
+                            <select class="form-select" id="recipientType" name="recipientType" required onchange="updateRecipientField()">
+                                <option value="">Select Recipient Type</option>
+                                <option value="All Applicants">All Applicants</option>
+                                <option value="All Agency Staff">All Agency Staff</option>
+                                <option value="Specific User">Specific User</option>
+                                <option value="License Holder">License Holder</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group mb-3" id="recipientEmailGroup" style="display: none;">
+                            <label for="recipientEmail" class="form-label">Recipient Email *</label>
+                            <input type="email" class="form-control" id="recipientEmail" name="recipientEmail" placeholder="Enter email address">
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="licenseId" class="form-label">Related License (Optional)</label>
+                            <select class="form-select" id="licenseId" name="licenseId">
+                                <option value="">Select License</option>
+                                <option value="1">LIC-2024-001 - Business License</option>
+                                <option value="2">LIC-2024-002 - Health Permit</option>
+                                <option value="3">LIC-2024-003 - Food Service License</option>
+                                <option value="4">LIC-2024-004 - Professional License</option>
+                                <option value="5">APP-2024-002 - Food Service License</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="message" class="form-label">Message *</label>
+                            <textarea class="form-control" id="message" name="message" rows="6" required placeholder="Enter your notification message..."></textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="@Url.Action("Index", "Notification")" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> Send Notification
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <!-- Message Templates -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Message Templates</h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <a href="#" class="list-group-item list-group-item-action" onclick="useTemplate('license-approved')">
+                            <h6 class="mb-1">License Approved</h6>
+                            <p class="mb-1 small text-muted">Notify applicant that their license has been approved</p>
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action" onclick="useTemplate('document-request')">
+                            <h6 class="mb-1">Document Request</h6>
+                            <p class="mb-1 small text-muted">Request additional documents from applicant</p>
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action" onclick="useTemplate('renewal-reminder')">
+                            <h6 class="mb-1">Renewal Reminder</h6>
+                            <p class="mb-1 small text-muted">Send renewal reminder to license holder</p>
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action" onclick="useTemplate('system-maintenance')">
+                            <h6 class="mb-1">System Maintenance</h6>
+                            <p class="mb-1 small text-muted">Notify users about system maintenance</p>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Notifications -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Recent Notifications</h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">License Application Update</h6>
+                                <small>2 hours ago</small>
+                            </div>
+                            <p class="mb-1 small">Sent to all applicants</p>
+                            <small class="text-muted">Type: License Status</small>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">Document Review Request</h6>
+                                <small>5 hours ago</small>
+                            </div>
+                            <p class="mb-1 small">Sent to john.doe@email.com</p>
+                            <small class="text-muted">Type: Document Review</small>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">System Maintenance Notice</h6>
+                                <small>1 day ago</small>
+                            </div>
+                            <p class="mb-1 small">Sent to all users</p>
+                            <small class="text-muted">Type: System</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function updateRecipientField() {
+            var recipientType = document.getElementById('recipientType').value;
+            var recipientEmailGroup = document.getElementById('recipientEmailGroup');
+            
+            if (recipientType === 'Specific User') {
+                recipientEmailGroup.style.display = 'block';
+                document.getElementById('recipientEmail').required = true;
+            } else {
+                recipientEmailGroup.style.display = 'none';
+                document.getElementById('recipientEmail').required = false;
+                document.getElementById('recipientEmail').value = '';
+            }
+        }
+
+        function useTemplate(templateType) {
+            var messageField = document.getElementById('message');
+            var typeField = document.getElementById('notificationType');
+            
+            switch(templateType) {
+                case 'license-approved':
+                    messageField.value = "Congratulations! Your license application has been approved. You can now access your license details and download the certificate from your dashboard.";
+                    typeField.value = 'License Status';
+                    break;
+                case 'document-request':
+                    messageField.value = "Your license application requires additional documents. Please upload the required documents through your dashboard to proceed with your application.";
+                    typeField.value = 'Document Review';
+                    break;
+                case 'renewal-reminder':
+                    messageField.value = "Your license is due for renewal soon. Please submit your renewal application to avoid any interruption in service.";
+                    typeField.value = 'License Renewal';
+                    break;
+                case 'system-maintenance':
+                    messageField.value = "The Gov2Biz License System will be undergoing scheduled maintenance. Service may be temporarily unavailable during this time.";
+                    typeField.value = 'System';
+                    break;
+            }
+        }
+    </script>
+}
