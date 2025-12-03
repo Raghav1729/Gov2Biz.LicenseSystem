@@ -1,0 +1,313 @@
+@{
+    ViewData["Title"] = "Document Details";
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Document Details</h1>
+        <div>
+            <a href="@Url.Action("Index", "Document")" class="btn btn-secondary me-2">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+            <a href="@Url.Action("Download", "Document", new { id = Model.Id })" class="btn btn-success">
+                <i class="fas fa-download"></i> Download
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Document Information -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Document Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">File Name</h6>
+                            <p><i class="fas fa-file-pdf text-danger"></i> @Model.FileName</p>
+                            
+                            <h6 class="text-primary mt-3">Document Type</h6>
+                            <p>@Model.DocumentType</p>
+                            
+                            <h6 class="text-primary mt-3">File Size</h6>
+                            <p>@Model.FileSize</p>
+                            
+                            <h6 class="text-primary mt-3">Upload Date</h6>
+                            <p>
+                                @{
+                                    var uploadDate = Model.UploadDate;
+                                    if (uploadDate != null)
+                                    {
+                                        try {
+                                            var date = (DateTime)uploadDate;
+                                            @date.ToString("MMMM dd, yyyy")
+                                        }
+                                        catch {
+                                            <span class="text-muted">Not available</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Not available</span>
+                                    }
+                                }
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Status</h6>
+                            <p>
+                                <span class="badge badge-@(Model.Status == "Approved" ? "success" : Model.Status == "Pending" ? "warning" : Model.Status == "Under Review" ? "info" : "danger")" style="font-size: 1rem;">
+                                    @Model.Status
+                                </span>
+                            </p>
+                            
+                            <h6 class="text-primary mt-3">Related License</h6>
+                            <p>@Model.LicenseNumber</p>
+                            
+                            <h6 class="text-primary mt-3">Uploaded By</h6>
+                            <p>@Model.UploadedBy</p>
+                            
+                            @if (!string.IsNullOrEmpty(Model.Description))
+                            {
+                                <h6 class="text-primary mt-3">Description</h6>
+                                <p>@Model.Description</p>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Document Preview -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Document Preview</h6>
+                </div>
+                <div class="card-body text-center">
+                    <div class="document-preview" style="min-height: 400px; background: #f8f9fc; border: 2px dashed #dee2e6; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                        <div>
+                            <i class="fas fa-file-pdf fa-5x text-danger mb-3"></i>
+                            <h5 class="text-gray-600">Document Preview</h5>
+                            <p class="text-muted">Click the Download button to view the full document</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <!-- Status Timeline -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Status Timeline</h6>
+                </div>
+                <div class="card-body">
+                    @{
+                        var baseUploadDate = Model.UploadDate;
+                    }
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-success"></div>
+                            <div class="timeline-content">
+                                <h6 class="timeline-title">Document Uploaded</h6>
+                                <p class="timeline-date">
+                                    @{
+                                        if (baseUploadDate != null)
+                                        {
+                                            try {
+                                                var date = (DateTime)baseUploadDate;
+                                                @date.ToString("MMMM dd, yyyy")
+                                            }
+                                            catch {
+                                                @DateTime.Now.ToString("MMMM dd, yyyy")
+                                            }
+                                        }
+                                        else
+                                        {
+                                            @DateTime.Now.ToString("MMMM dd, yyyy")
+                                        }
+                                    }
+                                </p>
+                                <p class="timeline-text">Document was successfully uploaded by @Model.UploadedBy</p>
+                            </div>
+                        </div>
+                        
+                        @if (Model.Status == "Under Review" || Model.Status == "Approved" || Model.Status == "Rejected")
+                        {
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-warning"></div>
+                                <div class="timeline-content">
+                                    <h6 class="timeline-title">Under Review</h6>
+                                    <p class="timeline-date">
+                                        @{
+                                            if (baseUploadDate != null)
+                                            {
+                                                try {
+                                                    var date = (DateTime)baseUploadDate;
+                                                    @date.AddDays(1).ToString("MMMM dd, yyyy")
+                                                }
+                                                catch {
+                                                    @DateTime.Now.AddDays(1).ToString("MMMM dd, yyyy")
+                                                }
+                                            }
+                                            else
+                                            {
+                                                @DateTime.Now.AddDays(1).ToString("MMMM dd, yyyy")
+                                            }
+                                        }
+                                    </p>
+                                    <p class="timeline-text">Document is being reviewed by agency staff</p>
+                                </div>
+                            </div>
+                        }
+                        
+                        @if (Model.Status == "Approved")
+                        {
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-info"></div>
+                                <div class="timeline-content">
+                                    <h6 class="timeline-title">Document Approved</h6>
+                                    <p class="timeline-date">
+                                        @{
+                                            if (baseUploadDate != null)
+                                            {
+                                                try {
+                                                    var date = (DateTime)baseUploadDate;
+                                                    @date.AddDays(2).ToString("MMMM dd, yyyy")
+                                                }
+                                                catch {
+                                                    @DateTime.Now.AddDays(2).ToString("MMMM dd, yyyy")
+                                                }
+                                            }
+                                            else
+                                            {
+                                                @DateTime.Now.AddDays(2).ToString("MMMM dd, yyyy")
+                                            }
+                                        }
+                                    </p>
+                                    <p class="timeline-text">Document was approved and is now active</p>
+                                </div>
+                            </div>
+                        }
+                        
+                        @if (Model.Status == "Rejected")
+                        {
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-danger"></div>
+                                <div class="timeline-content">
+                                    <h6 class="timeline-title">Document Rejected</h6>
+                                    <p class="timeline-date">
+                                        @{
+                                            if (baseUploadDate != null)
+                                            {
+                                                try {
+                                                    var date = (DateTime)baseUploadDate;
+                                                    @date.AddDays(2).ToString("MMMM dd, yyyy")
+                                                }
+                                                catch {
+                                                    @DateTime.Now.AddDays(2).ToString("MMMM dd, yyyy")
+                                                }
+                                            }
+                                            else
+                                            {
+                                                @DateTime.Now.AddDays(2).ToString("MMMM dd, yyyy")
+                                            }
+                                        }
+                                    </p>
+                                    <p class="timeline-text">Document was rejected. Please upload a corrected version.</p>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="@Url.Action("Download", "Document", new { id = Model.Id })" class="btn btn-success">
+                            <i class="fas fa-download"></i> Download Document
+                        </a>
+                        
+                        @if (ViewBag.UserRole == "Administrator" || ViewBag.UserRole == "AgencyStaff")
+                        {
+                            <button class="btn btn-primary" disabled>
+                                <i class="fas fa-check"></i> Approve Document
+                            </button>
+                            <button class="btn btn-warning" disabled>
+                                <i class="fas fa-times"></i> Reject Document
+                            </button>
+                            <button class="btn btn-info" disabled>
+                                <i class="fas fa-comment"></i> Request Clarification
+                            </button>
+                        }
+                        
+                        <button class="btn btn-outline-secondary" disabled>
+                            <i class="fas fa-share"></i> Share Document
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+    
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 15px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #e3e6f0;
+    }
+    
+    .timeline-item {
+        position: relative;
+        margin-bottom: 30px;
+    }
+    
+    .timeline-marker {
+        position: absolute;
+        left: -23px;
+        top: 0;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid white;
+    }
+    
+    .timeline-content {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .timeline-title {
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+    
+    .timeline-date {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-bottom: 5px;
+    }
+    
+    .timeline-text {
+        font-size: 0.875rem;
+        margin-bottom: 0;
+    }
+</style>

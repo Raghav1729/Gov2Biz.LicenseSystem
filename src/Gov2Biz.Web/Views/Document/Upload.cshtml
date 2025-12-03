@@ -1,0 +1,105 @@
+@{
+    ViewData["Title"] = "Upload Document";
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Upload Document</h1>
+        <a href="@Url.Action("Index", "Document")" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to List
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Document Information</h6>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Upload" method="post" enctype="multipart/form-data">
+                        <div class="form-group mb-3">
+                            <label for="file" class="form-label">Select File *</label>
+                            <input type="file" class="form-control" id="file" name="file" required accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+                            <small class="form-text text-muted">Supported formats: PDF, DOC, DOCX, JPG, JPEG, PNG (Max 10MB)</small>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="documentType" class="form-label">Document Type *</label>
+                            <select class="form-select" id="documentType" name="documentType" required>
+                                <option value="">Select Document Type</option>
+                                <option value="Business Registration">Business Registration</option>
+                                <option value="Health Certificate">Health Certificate</option>
+                                <option value="Tax Clearance">Tax Clearance</option>
+                                <option value="Professional Certificate">Professional Certificate</option>
+                                <option value="Food Safety Certificate">Food Safety Certificate</option>
+                                <option value="Building Permit">Building Permit</option>
+                                <option value="Environmental Report">Environmental Report</option>
+                                <option value="Identity Document">Identity Document</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="licenseId" class="form-label">Related License (Optional)</label>
+                            <select class="form-select" id="licenseId" name="licenseId">
+                                <option value="">Select License</option>
+                                <option value="1">LIC-2024-001 - Business License</option>
+                                <option value="2">LIC-2024-002 - Health Permit</option>
+                                <option value="3">LIC-2024-003 - Food Service License</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="4" placeholder="Provide details about this document..."></textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="@Url.Action("Index", "Document")" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-upload"></i> Upload Document
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <!-- Recent Uploads -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Recent Uploads</h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-file-pdf text-danger"></i>
+                                <small>Business_Registration.pdf</small>
+                            </div>
+                            <small class="text-muted">2 days ago</small>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-file-image text-warning"></i>
+                                <small>ID_Card.jpg</small>
+                            </div>
+                            <small class="text-muted">5 days ago</small>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-file-word text-primary"></i>
+                                <small>Tax_Clearance.docx</small>
+                            </div>
+                            <small class="text-muted">1 week ago</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
