@@ -1,0 +1,234 @@
+@{
+    ViewData["Title"] = "Application Details";
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Application Details</h1>
+        <div>
+            <a href="@Url.Action("Index", "License")" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+        </div>
+    </div>
+
+    <!-- Application Information -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Application Information</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-primary">Application Number</h6>
+                    <p class="font-weight-bold">@Model.ApplicationNumber</p>
+                    
+                    <h6 class="text-primary">License Type</h6>
+                    <p>@Model.LicenseType</p>
+                    
+                    <h6 class="text-primary">Status</h6>
+                    <p>
+                        <span class="badge badge-@(Model.Status == "Approved" ? "success" : Model.Status == "Submitted" || Model.Status == "Under Review" ? "warning" : Model.Status == "Rejected" ? "danger" : "info")">
+                            @Model.Status
+                        </span>
+                    </p>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-primary">Agency</h6>
+                    <p>@Model.AgencyName</p>
+                    
+                    <h6 class="text-primary">Application Fee</h6>
+                    <p>@Model.ApplicationFee.ToString("C")</p>
+                    
+                    <h6 class="text-primary">Payment Status</h6>
+                    <p>
+                        <span class="badge badge-@(Model.IsPaid ? "success" : "warning")">
+                            @(Model.IsPaid ? "Paid" : "Pending")
+                        </span>
+                    </p>
+                </div>
+            </div>
+            <hr>
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-primary">Submitted Date</h6>
+                    <p>
+                        @{
+                            var submittedDate = Model.SubmittedAt;
+                            if (submittedDate != null)
+                            {
+                                try {
+                                    var date = (DateTime)submittedDate;
+                                    @date.ToString("MMMM dd, yyyy")
+                                }
+                                catch {
+                                    <span class="text-muted">Not submitted</span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-muted">Not submitted</span>
+                            }
+                        }
+                    </p>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-primary">Reviewed Date</h6>
+                    <p>
+                        @{
+                            var reviewedDate = Model.ReviewedAt;
+                            if (reviewedDate != null)
+                            {
+                                try {
+                                    var date = (DateTime)reviewedDate;
+                                    @date.ToString("MMMM dd, yyyy")
+                                }
+                                catch {
+                                    <span class="text-muted">Not reviewed</span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-muted">Not reviewed</span>
+                            }
+                        }
+                    </p>
+                </div>
+            </div>
+            @if (!string.IsNullOrEmpty(Model.ReviewerNotes))
+            {
+                <hr>
+                <div class="row">
+                    <div class="col-12">
+                        <h6 class="text-primary">Reviewer Notes</h6>
+                        <p>@Model.ReviewerNotes</p>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Applicant Information -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Applicant Information</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-primary">Name</h6>
+                    <p class="font-weight-bold">@Model.ApplicantName</p>
+                    
+                    @if (!string.IsNullOrEmpty(Model.ApplicantEmail))
+                    {
+                        <h6 class="text-primary mt-3">Email</h6>
+                        <p>@Model.ApplicantEmail</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Documents -->
+    @if (ViewBag.Documents != null && ((List<Gov2Biz.Shared.DTOs.DocumentDto>)ViewBag.Documents).Count > 0)
+    {
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Documents</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Document Name</th>
+                                <th>Type</th>
+                                <th>Uploaded Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (Gov2Biz.Shared.DTOs.DocumentDto doc in ViewBag.Documents)
+                            {
+                                <tr>
+                                    <td>@doc.FileName</td>
+                                    <td>@doc.DocumentType</td>
+                                    <td>@doc.UploadedAt.ToString("MMM dd, yyyy")</td>
+                                    <td>
+                                        <a href="@Url.Action("Download", "Document", new { id = doc.Id })" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-download"></i> Download
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Action Buttons -->
+    @if (ViewBag.UserRole == "Administrator" || ViewBag.UserRole == "AgencyStaff")
+    {
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Actions</h6>
+            </div>
+            <div class="card-body">
+                @if (Model.Status == "Submitted" || Model.Status == "Under Review")
+                {
+                    <div class="row">
+                        <div class="col-md-6">
+                            <form method="post" asp-action="Approve" asp-route-id="@Model.Id">
+                                <button type="submit" class="btn btn-success btn-block">
+                                    <i class="fas fa-check"></i> Approve Application
+                                </button>
+                            </form>
+                        </div>
+                        <div class="col-md-6">
+                            <button type="button" class="btn btn-danger btn-block" data-toggle="modal" data-target="#rejectModal">
+                                <i class="fas fa-times"></i> Reject Application
+                            </button>
+                        </div>
+                    </div>
+                }
+                @if (Model.Status == "Approved" && !Model.IssuedAt.HasValue)
+                {
+                    <form method="post" asp-action="Issue" asp-route-applicationId="@Model.Id">
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <i class="fas fa-certificate"></i> Issue License
+                        </button>
+                    </form>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Reject Modal -->
+    <div class="modal fade" id="rejectModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Reject Application</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <form method="post" asp-action="Reject" asp-route-id="@Model.Id">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="rejectionReason">Rejection Reason</label>
+                            <textarea class="form-control" id="rejectionReason" name="rejectionReason" rows="3" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Reject Application</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

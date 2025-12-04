@@ -132,7 +132,7 @@ namespace Gov2Biz.Web.Controllers
                     var application = await _licenseServiceClient.CreateApplicationAsync(command);
 
                     TempData["Success"] = $"License application {application.ApplicationNumber} created successfully!";
-                    return RedirectToAction("Details", new { id = application.Id });
+                    return RedirectToAction("ApplicationDetails", new { id = application.Id });
                 }
                 catch (Exception ex)
                 {
@@ -319,13 +319,13 @@ namespace Gov2Biz.Web.Controllers
                 );
 
                 TempData["Success"] = "Application approved successfully!";
-                return RedirectToAction("Details", new { id });
+                return RedirectToAction("ApplicationDetails", new { id });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error approving application {ApplicationId}", id);
                 TempData["Error"] = "Failed to approve application. Please try again.";
-                return RedirectToAction("Details", new { id });
+                return RedirectToAction("ApplicationDetails", new { id });
             }
         }
 
@@ -354,13 +354,13 @@ namespace Gov2Biz.Web.Controllers
                 );
 
                 TempData["Success"] = "Application rejected successfully!";
-                return RedirectToAction("Details", new { id });
+                return RedirectToAction("ApplicationDetails", new { id });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error rejecting application {ApplicationId}", id);
                 TempData["Error"] = "Failed to reject application. Please try again.";
-                return RedirectToAction("Details", new { id });
+                return RedirectToAction("ApplicationDetails", new { id });
             }
         }
 
@@ -416,13 +416,13 @@ namespace Gov2Biz.Web.Controllers
                 );
 
                 TempData["Success"] = $"License {license.LicenseNumber} renewed successfully!";
-                return RedirectToAction("Details", new { id });
+                return RedirectToAction("ApplicationDetails", new { id });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error renewing license {LicenseId}", id);
                 TempData["Error"] = "Failed to renew license. Please try again.";
-                return RedirectToAction("Details", new { id });
+                return RedirectToAction("ApplicationDetails", new { id });
             }
         }
 
