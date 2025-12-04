@@ -7,8 +7,13 @@ namespace Gov2Biz.LicenseService.Data
 {
     public class LicenseDbContext : DbContext
     {
-        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IHttpContextAccessor? _httpContextAccessor;
         private readonly string? _tenantId;
+
+        // Parameterless constructor for EF Core tools
+        public LicenseDbContext()
+        {
+        }
 
         public LicenseDbContext(DbContextOptions<LicenseDbContext> options, IHttpContextAccessor httpContextAccessor) : base(options)
         {
@@ -26,6 +31,9 @@ namespace Gov2Biz.LicenseService.Data
         public DbSet<LicenseApplication> LicenseApplications { get; set; }
         public DbSet<Agency> Agencies { get; set; }
         public DbSet<Tenant> Tenants { get; set; }
+        public DbSet<Document> Documents { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
+        public DbSet<Payment> Payments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -40,6 +48,9 @@ namespace Gov2Biz.LicenseService.Data
             ConfigureLicense(modelBuilder);
             ConfigureLicenseApplication(modelBuilder);
             ConfigureTenant(modelBuilder);
+            ConfigureDocument(modelBuilder);
+            ConfigureNotification(modelBuilder);
+            ConfigurePayment(modelBuilder);
 
             // Seed data
             SeedData(modelBuilder);
@@ -54,6 +65,9 @@ namespace Gov2Biz.LicenseService.Data
                 modelBuilder.Entity<License>().HasQueryFilter(e => EF.Property<string>(e, "TenantId") == _tenantId);
                 modelBuilder.Entity<LicenseApplication>().HasQueryFilter(e => EF.Property<string>(e, "TenantId") == _tenantId);
                 modelBuilder.Entity<Agency>().HasQueryFilter(e => EF.Property<string>(e, "TenantId") == _tenantId);
+                modelBuilder.Entity<Document>().HasQueryFilter(e => EF.Property<string>(e, "TenantId") == _tenantId);
+                modelBuilder.Entity<Notification>().HasQueryFilter(e => EF.Property<string>(e, "TenantId") == _tenantId);
+                modelBuilder.Entity<Payment>().HasQueryFilter(e => EF.Property<string>(e, "TenantId") == _tenantId);
             }
         }
 
@@ -142,11 +156,43 @@ namespace Gov2Biz.LicenseService.Data
                 new Agency { Id = "FINANCE", Name = "Financial Services Authority", Code = "FINANCE", TenantId = "tenant-002", Description = "Financial services licensing", IsActive = true, CreatedAt = DateTime.UtcNow }
             );
 
-            // Seed users
+            // Seed users with proper password hashing
             modelBuilder.Entity<User>().HasData(
-                new User { Id = 1, Email = "admin@gov.com", FirstName = "Admin", LastName = "User", Role = "Administrator", TenantId = "tenant-001", AgencyId = "HEALTH", CreatedAt = DateTime.UtcNow, IsActive = true },
-                new User { Id = 2, Email = "staff@agency.com", FirstName = "Staff", LastName = "User", Role = "AgencyStaff", TenantId = "tenant-001", AgencyId = "HEALTH", CreatedAt = DateTime.UtcNow, IsActive = true },
-                new User { Id = 3, Email = "user@example.com", FirstName = "Regular", LastName = "User", Role = "Applicant", TenantId = "tenant-002", CreatedAt = DateTime.UtcNow, IsActive = true }
+                new User { 
+                    Id = 1, 
+                    Email = "admin", 
+                    FirstName = "Admin", 
+                    LastName = "User", 
+                    Role = "Administrator", 
+                    TenantId = "tenant-001", 
+                    AgencyId = "HEALTH", 
+                    CreatedAt = DateTime.UtcNow, 
+                    IsActive = true,
+                    PasswordHash = HashPassword("admin123")
+                },
+                new User { 
+                    Id = 2, 
+                    Email = "staff", 
+                    FirstName = "Staff", 
+                    LastName = "User", 
+                    Role = "AgencyStaff", 
+                    TenantId = "tenant-001", 
+                    AgencyId = "HEALTH", 
+                    CreatedAt = DateTime.UtcNow, 
+                    IsActive = true,
+                    PasswordHash = HashPassword("staff123")
+                },
+                new User { 
+                    Id = 3, 
+                    Email = "applicant", 
+                    FirstName = "Applicant", 
+                    LastName = "User", 
+                    Role = "Applicant", 
+                    TenantId = "tenant-002", 
+                    CreatedAt = DateTime.UtcNow, 
+                    IsActive = true,
+                    PasswordHash = HashPassword("applicant123")
+                }
             );
         }
 
@@ -201,6 +247,52 @@ namespace Gov2Biz.LicenseService.Data
                     }
                 }
             }
+        }
+
+        private string HashPassword(string password)
+        {
+            // Simple hashing for demo - in production use BCrypt or similar
+            return "plain:" + password;
+        }
+
+        private void ConfigureDocument(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Document>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.FileName).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.ContentType).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.DocumentType).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.TenantId).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.EntityType).IsRequired().HasMaxLength(50);
+            });
+        }
+
+        private void ConfigureNotification(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Notification>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.Message).IsRequired();
+                entity.Property(e => e.Type).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.TenantId).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.EntityReference).HasMaxLength(200);
+            });
+        }
+
+        private void ConfigurePayment(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Payment>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.TransactionId).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.PaymentMethod).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Status).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Currency).IsRequired().HasMaxLength(10);
+                entity.Property(e => e.TenantId).IsRequired().HasMaxLength(50);
+                entity.HasIndex(e => new { e.TransactionId, e.TenantId }).IsUnique();
+            });
         }
     }
 }

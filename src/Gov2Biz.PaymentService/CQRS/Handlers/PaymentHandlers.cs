@@ -1,6 +1,7 @@
 using Gov2Biz.PaymentService.Data;
 using Gov2Biz.Shared.Models;
 using Gov2Biz.Shared.DTOs;
+using Gov2Biz.PaymentService.Services;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -93,10 +94,10 @@ namespace Gov2Biz.PaymentService.CQRS.Handlers
         public async Task<PaymentDto> Handle(GetPaymentQuery request, CancellationToken cancellationToken)
         {
             var payment = await _context.Payments
-                .FirstOrDefaultAsync(p => p.Id == request.Id, cancellationToken);
+                .FirstOrDefaultAsync(p => p.Id == request.PaymentId, cancellationToken);
 
             if (payment == null)
-                throw new KeyNotFoundException($"Payment with ID {request.Id} not found");
+                throw new KeyNotFoundException($"Payment with ID {request.PaymentId} not found");
 
             return await MapToDto(payment);
         }
@@ -119,7 +120,7 @@ namespace Gov2Biz.PaymentService.CQRS.Handlers
         }
     }
 
-    public class GetPaymentsHandler : IRequestHandler<GetPaymentsQuery, Gov2Biz.Shared.Responses.PagedResult<PaymentDto>>
+    public class GetPaymentsHandler : IRequestHandler<GetPaymentsQuery, PagedResult<PaymentDto>>
     {
         private readonly PaymentDbContext _context;
 
@@ -128,7 +129,7 @@ namespace Gov2Biz.PaymentService.CQRS.Handlers
             _context = context;
         }
 
-        public async Task<Gov2Biz.Shared.Responses.PagedResult<PaymentDto>> Handle(GetPaymentsQuery request, CancellationToken cancellationToken)
+        public async Task<PagedResult<PaymentDto>> Handle(GetPaymentsQuery request, CancellationToken cancellationToken)
         {
             var query = _context.Payments.AsQueryable();
 
@@ -157,7 +158,7 @@ namespace Gov2Biz.PaymentService.CQRS.Handlers
                 dtos.Add(await MapToDto(payment));
             }
 
-            return new Gov2Biz.Shared.Responses.PagedResult<PaymentDto>
+            return new Gov2Biz.Shared.DTOs.PagedResult<PaymentDto>
             {
                 Items = dtos,
                 TotalCount = totalCount,
@@ -209,7 +210,7 @@ namespace Gov2Biz.PaymentService.CQRS.Handlers
             var refundRequest = new RefundRequest
             {
                 TransactionId = payment.TransactionId,
-                Amount = request.Amount,
+                Amount = payment.Amount, // Use full amount from payment
                 Reason = request.Reason
             };
 
@@ -257,7 +258,7 @@ namespace Gov2Biz.PaymentService.CQRS.Handlers
         public async Task<List<PaymentDto>> Handle(GetUserPaymentsQuery request, CancellationToken cancellationToken)
         {
             var payments = await _context.Payments
-                .Where(p => p.PayerId == request.PayerId)
+                .Where(p => p.PayerId == request.UserId)
                 .OrderByDescending(p => p.CreatedAt)
                 .ToListAsync(cancellationToken);
 
@@ -288,7 +289,7 @@ namespace Gov2Biz.PaymentService.CQRS.Handlers
         }
     }
 
-    public class GetPaymentStatsHandler : IRequestHandler<GetPaymentStatsQuery, PaymentStatsDto>
+    public class GetPaymentStatsHandler : IRequestHandler<GetPaymentStatsQuery, object>
     {
         private readonly PaymentDbContext _context;
 
@@ -297,7 +298,7 @@ namespace Gov2Biz.PaymentService.CQRS.Handlers
             _context = context;
         }
 
-        public async Task<PaymentStatsDto> Handle(GetPaymentStatsQuery request, CancellationToken cancellationToken)
+        public async Task<object> Handle(GetPaymentStatsQuery request, CancellationToken cancellationToken)
         {
             var query = _context.Payments.AsQueryable();
 
@@ -312,7 +313,7 @@ namespace Gov2Biz.PaymentService.CQRS.Handlers
 
             var payments = await query.ToListAsync(cancellationToken);
 
-            return new PaymentStatsDto
+            return new
             {
                 TotalRevenue = payments.Where(p => p.Status == "Completed").Sum(p => p.Amount),
                 TotalPayments = payments.Count,

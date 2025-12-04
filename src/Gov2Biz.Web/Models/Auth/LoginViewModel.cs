@@ -16,5 +16,9 @@ public class LoginViewModel
     [Display(Name = "Remember me?")]
     public bool RememberMe { get; set; }
 
+    [Required(ErrorMessage = "Tenant domain is required")]
+    [Display(Name = "Tenant Domain")]
+    public string TenantDomain { get; set; } = "agency1.gov";
+
     public string? ReturnUrl { get; set; }
 }

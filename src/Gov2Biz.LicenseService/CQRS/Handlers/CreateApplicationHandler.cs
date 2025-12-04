@@ -27,8 +27,8 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
                 ApplicantId = request.ApplicantId,
                 Status = "Submitted",
                 SubmittedAt = DateTime.UtcNow,
-                ApplicationFee = request.Fee,
-                ReviewerNotes = request.Notes,
+                ApplicationFee = request.ApplicationFee,
+                ReviewerNotes = request.ApplicantNotes,
                 IsPaid = false,
                 TenantId = "default" // Should be extracted from user context
             };

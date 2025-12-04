@@ -4,8 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Gov2Biz.NotificationService.Data;
 using Gov2Biz.NotificationService.CQRS.Handlers;
-using Gov2Biz.NotificationService.CQRS.Commands;
-using Gov2Biz.NotificationService.CQRS.Queries;
+using Gov2Biz.Shared.DTOs;
 using Gov2Biz.NotificationService.Services;
 using MediatR;
 
@@ -15,11 +14,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<NotificationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddMediatR(typeof(Program));
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 builder.Services.AddTransient<IRequestHandler<CreateNotificationCommand, NotificationDto>, CreateNotificationHandler>();
 builder.Services.AddTransient<IRequestHandler<GetNotificationQuery, NotificationDto>, GetNotificationHandler>();
-builder.Services.AddTransient<IRequestHandler<GetNotificationsQuery, Gov2Biz.Shared.Responses.PagedResult<NotificationDto>>, GetNotificationsHandler>();
-builder.Services.AddTransient<IRequestHandler<MarkAsReadCommand, bool>, MarkAsReadHandler>();
+builder.Services.AddTransient<IRequestHandler<GetNotificationsQuery, Gov2Biz.Shared.DTOs.PagedResult<NotificationDto>>, GetNotificationsHandler>();
+builder.Services.AddTransient<IRequestHandler<MarkAsReadCommand, NotificationDto>, MarkAsReadHandler>();
 builder.Services.AddTransient<IRequestHandler<MarkAllAsReadCommand, bool>, MarkAllAsReadHandler>();
 builder.Services.AddTransient<IRequestHandler<GetUnreadCountQuery, int>, GetUnreadCountHandler>();
 builder.Services.AddTransient<IRequestHandler<GetUserNotificationsQuery, List<NotificationDto>>, GetUserNotificationsHandler>();
@@ -32,7 +31,7 @@ builder.Services.AddKeyedSingleton<INotificationSender, PushNotificationSender>(
 
 // Add JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var secretKey = jwtSettings["Secret"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
+var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
 var key = Encoding.UTF8.GetBytes(secretKey);
 
 builder.Services.AddAuthentication(options =>

@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Gov2Biz.Web.Models.Auth;
+using Gov2Biz.Web.Services;
+using Gov2Biz.Shared.DTOs;
 using System.Security.Claims;
 
 namespace Gov2Biz.Web.Controllers;
@@ -10,10 +12,12 @@ namespace Gov2Biz.Web.Controllers;
 public class AuthController : Controller
 {
     private readonly ILogger<AuthController> _logger;
+    private readonly IAuthService _authService;
 
-    public AuthController(ILogger<AuthController> logger)
+    public AuthController(ILogger<AuthController> logger, IAuthService authService)
     {
         _logger = logger;
+        _authService = authService;
     }
 
     [HttpGet]
@@ -38,18 +42,33 @@ public class AuthController : Controller
 
         try
         {
-            // Simple authentication with hardcoded users
-            if (model.Username == "admin" && model.Password == "admin123")
+            // Use database-driven authentication
+            var loginRequest = new LoginRequest
+            {
+                Email = model.Username,
+                Password = model.Password,
+                TenantDomain = model.TenantDomain
+            };
+
+            var loginResponse = await _authService.LoginAsync(loginRequest);
+
+            if (loginResponse.Success && loginResponse.User != null)
             {
                 var claims = new List<Claim>
                 {
-                    new Claim(ClaimTypes.Name, model.Username),
-                    new Claim(ClaimTypes.Email, "admin@gov2biz.com"),
-                    new Claim(ClaimTypes.Role, "Administrator"),
-                    new Claim("TenantId", "tenant-001"),
-                    new Claim("AgencyId", "agency-001"),
-                    new Claim("FullName", "System Administrator")
+                    new Claim(ClaimTypes.NameIdentifier, loginResponse.User.Id.ToString()),
+                    new Claim(ClaimTypes.Name, loginResponse.User.Name),
+                    new Claim(ClaimTypes.Email, loginResponse.User.Email),
+                    new Claim(ClaimTypes.Role, loginResponse.User.Role),
+                    new Claim("TenantId", loginResponse.User.TenantId),
+                    new Claim("AgencyId", loginResponse.User.AgencyId),
+                    new Claim("FullName", loginResponse.User.Name)
                 };
+
+                if (!string.IsNullOrEmpty(loginResponse.User.AgencyName))
+                {
+                    claims.Add(new Claim("AgencyName", loginResponse.User.AgencyName));
+                }
 
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                 var authProperties = new AuthenticationProperties
@@ -72,62 +91,8 @@ public class AuthController : Controller
 
                 return RedirectToAction("Index", "Home");
             }
-            else if (model.Username == "staff" && model.Password == "staff123")
-            {
-                var claims = new List<Claim>
-                {
-                    new Claim(ClaimTypes.Name, model.Username),
-                    new Claim(ClaimTypes.Email, "staff@gov2biz.com"),
-                    new Claim(ClaimTypes.Role, "AgencyStaff"),
-                    new Claim("TenantId", "tenant-001"),
-                    new Claim("AgencyId", "agency-001"),
-                    new Claim("FullName", "Agency Staff")
-                };
 
-                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-                var authProperties = new AuthenticationProperties
-                {
-                    IsPersistent = model.RememberMe,
-                    ExpiresUtc = DateTimeOffset.UtcNow.AddHours(24)
-                };
-
-                await HttpContext.SignInAsync(
-                    CookieAuthenticationDefaults.AuthenticationScheme,
-                    new ClaimsPrincipal(claimsIdentity),
-                    authProperties);
-
-                _logger.LogInformation("User {Username} logged in successfully", model.Username);
-                return RedirectToAction("Index", "Home");
-            }
-            else if (model.Username == "applicant" && model.Password == "applicant123")
-            {
-                var claims = new List<Claim>
-                {
-                    new Claim(ClaimTypes.Name, model.Username),
-                    new Claim(ClaimTypes.Email, "applicant@gov2biz.com"),
-                    new Claim(ClaimTypes.Role, "Applicant"),
-                    new Claim("TenantId", "tenant-002"),
-                    new Claim("AgencyId", "agency-002"),
-                    new Claim("FullName", "John Applicant")
-                };
-
-                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-                var authProperties = new AuthenticationProperties
-                {
-                    IsPersistent = model.RememberMe,
-                    ExpiresUtc = DateTimeOffset.UtcNow.AddHours(24)
-                };
-
-                await HttpContext.SignInAsync(
-                    CookieAuthenticationDefaults.AuthenticationScheme,
-                    new ClaimsPrincipal(claimsIdentity),
-                    authProperties);
-
-                _logger.LogInformation("User {Username} logged in successfully", model.Username);
-                return RedirectToAction("Index", "Home");
-            }
-
-            ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+            ModelState.AddModelError(string.Empty, loginResponse.Message ?? "Invalid login attempt.");
             return View(model);
         }
         catch (Exception ex)

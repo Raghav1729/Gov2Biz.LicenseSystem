@@ -296,7 +296,7 @@ namespace Gov2Biz.Shared.DTOs
         string Type,
         int RecipientId,
         string? EntityReference = null
-    );
+    ) : IRequest<NotificationDto>;
 
     public record CreatePaymentCommand(
         int ApplicationId,
@@ -304,7 +304,80 @@ namespace Gov2Biz.Shared.DTOs
         decimal Amount,
         string PaymentMethod,
         string Currency = "USD"
-    );
+    ) : IRequest<PaymentDto>;
+
+    // Document CQRS Commands and Queries
+    public record UploadDocumentCommand(
+        IFormFile File,
+        string EntityType,
+        int EntityId,
+        string DocumentType,
+        int UploadedBy,
+        string? Notes = null
+    ) : IRequest<DocumentDto>;
+
+    public record DeleteDocumentCommand(int DocumentId) : IRequest<bool>;
+
+    public record GetDocumentQuery(int DocumentId) : IRequest<DocumentDto>;
+
+    public record GetDocumentsQuery(
+        string? EntityType = null,
+        int? EntityId = null,
+        string? DocumentType = null,
+        int? UploadedBy = null,
+        int PageNumber = 1,
+        int PageSize = 10
+    ) : IRequest<PagedResult<DocumentDto>>;
+
+    public record GetEntityDocumentsQuery(string EntityType, int EntityId) : IRequest<List<DocumentDto>>;
+
+    public record DownloadDocumentQuery(int DocumentId) : IRequest<byte[]>;
+
+    // Payment CQRS Commands and Queries
+    public record RefundPaymentCommand(int PaymentId, string Reason) : IRequest<PaymentDto>;
+
+    public record GetPaymentQuery(int PaymentId) : IRequest<PaymentDto>;
+
+    public record GetPaymentsQuery(
+        int? ApplicationId = null,
+        int? PayerId = null,
+        string? Status = null,
+        string? PaymentMethod = null,
+        int PageNumber = 1,
+        int PageSize = 10
+    ) : IRequest<PagedResult<PaymentDto>>;
+
+    public record GetUserPaymentsQuery(int UserId) : IRequest<List<PaymentDto>>;
+
+    public record GetPaymentStatsQuery(
+        string? AgencyId = null,
+        DateTime? StartDate = null,
+        DateTime? EndDate = null,
+        string? Status = null
+    ) : IRequest<object>;
+
+    public record GetPaymentByTransactionIdQuery(string TransactionId) : IRequest<PaymentDto>;
+
+    // Notification CQRS Commands and Queries
+    public record MarkAsReadCommand(int NotificationId) : IRequest<NotificationDto>;
+
+    public record MarkAllAsReadCommand(int UserId) : IRequest<bool>;
+
+    public record GetNotificationQuery(int NotificationId) : IRequest<NotificationDto>;
+
+    public record GetNotificationsQuery(
+        int RecipientId,
+        string? Type = null,
+        bool? IsRead = null,
+        int PageNumber = 1,
+        int PageSize = 10
+    ) : IRequest<PagedResult<NotificationDto>>;
+
+    public record GetUserNotificationsQuery(int UserId) : IRequest<List<NotificationDto>>;
+
+    public record GetUnreadCountQuery(int UserId) : IRequest<int>;
+
+    public record DeleteNotificationCommand(int NotificationId) : IRequest<bool>;
 
     // CQRS Queries
     public record GetLicenseQuery(int LicenseId) : IRequest<LicenseDto>;

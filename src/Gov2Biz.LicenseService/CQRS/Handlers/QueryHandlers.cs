@@ -18,10 +18,10 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
         public async Task<LicenseApplicationDto> Handle(GetLicenseApplicationQuery request, CancellationToken cancellationToken)
         {
             var application = await _context.LicenseApplications
-                .FirstOrDefaultAsync(a => a.Id == request.Id, cancellationToken);
+                .FirstOrDefaultAsync(a => a.Id == request.ApplicationId, cancellationToken);
 
             if (application == null)
-                throw new KeyNotFoundException($"Application with ID {request.Id} not found");
+                throw new KeyNotFoundException($"Application with ID {request.ApplicationId} not found");
 
             return await MapToDto(application);
         }
@@ -39,14 +39,20 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
                 LicenseType = application.LicenseType,
                 Status = application.Status,
                 ApplicantName = $"{applicant?.FirstName} {applicant?.LastName}",
+                ApplicantEmail = applicant?.Email ?? "",
                 AgencyName = agency?.Name ?? "",
-                SubmittedDate = application.SubmittedDate,
-                ReviewedDate = application.ReviewedDate,
-                ApprovedDate = application.ApprovedDate,
-                ReviewerName = reviewer != null ? $"{reviewer.FirstName} {reviewer.LastName}" : null,
-                Notes = application.Notes,
-                Fee = application.Fee,
-                PaymentCompleted = application.PaymentCompleted
+                ReviewerName = reviewer != null ? $"{reviewer.FirstName} {reviewer.LastName}" : "",
+                SubmittedAt = application.SubmittedAt,
+                ReviewedAt = application.ReviewedAt,
+                ApprovedAt = application.ApprovedAt,
+                RejectedAt = application.RejectedAt,
+                IssuedAt = application.IssuedAt,
+                ReviewerNotes = application.ReviewerNotes,
+                RejectionReason = application.RejectionReason,
+                ApplicationFee = application.ApplicationFee,
+                IsPaid = application.IsPaid,
+                DocumentCount = 0, // Would need to join with documents table
+                PaymentCount = 0  // Would need to join with payments table
             };
         }
     }
@@ -64,20 +70,20 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
         {
             var query = _context.LicenseApplications.AsQueryable();
 
-            if (!string.IsNullOrEmpty(request.AgencyId))
-                query = query.Where(a => a.AgencyId == request.AgencyId);
+            if (!string.IsNullOrEmpty(request.Filter.AgencyId))
+                query = query.Where(a => a.AgencyId == request.Filter.AgencyId);
 
-            if (!string.IsNullOrEmpty(request.Status))
-                query = query.Where(a => a.Status == request.Status);
+            if (!string.IsNullOrEmpty(request.Filter.Status))
+                query = query.Where(a => a.Status == request.Filter.Status);
 
-            if (request.ApplicantId.HasValue)
-                query = query.Where(a => a.ApplicantId == request.ApplicantId.Value);
+            if (request.Filter.ApplicantId.HasValue)
+                query = query.Where(a => a.ApplicantId == request.Filter.ApplicantId.Value);
 
             var totalCount = await query.CountAsync(cancellationToken);
             var applications = await query
-                .OrderByDescending(a => a.SubmittedDate)
-                .Skip((request.PageNumber - 1) * request.PageSize)
-                .Take(request.PageSize)
+                .OrderByDescending(a => a.SubmittedAt)
+                .Skip((request.Filter.PageNumber - 1) * request.Filter.PageSize)
+                .Take(request.Filter.PageSize)
                 .ToListAsync(cancellationToken);
 
             var dtos = new List<LicenseApplicationDto>();
@@ -90,8 +96,8 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
             {
                 Items = dtos,
                 TotalCount = totalCount,
-                PageNumber = request.PageNumber,
-                PageSize = request.PageSize
+                PageNumber = request.Filter.PageNumber,
+                PageSize = request.Filter.PageSize
             };
         }
 
@@ -108,14 +114,20 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
                 LicenseType = application.LicenseType,
                 Status = application.Status,
                 ApplicantName = $"{applicant?.FirstName} {applicant?.LastName}",
+                ApplicantEmail = applicant?.Email ?? "",
                 AgencyName = agency?.Name ?? "",
-                SubmittedDate = application.SubmittedDate,
-                ReviewedDate = application.ReviewedDate,
-                ApprovedDate = application.ApprovedDate,
-                ReviewerName = reviewer != null ? $"{reviewer.FirstName} {reviewer.LastName}" : null,
-                Notes = application.Notes,
-                Fee = application.Fee,
-                PaymentCompleted = application.PaymentCompleted
+                ReviewerName = reviewer != null ? $"{reviewer.FirstName} {reviewer.LastName}" : "",
+                SubmittedAt = application.SubmittedAt,
+                ReviewedAt = application.ReviewedAt,
+                ApprovedAt = application.ApprovedAt,
+                RejectedAt = application.RejectedAt,
+                IssuedAt = application.IssuedAt,
+                ReviewerNotes = application.ReviewerNotes,
+                RejectionReason = application.RejectionReason,
+                ApplicationFee = application.ApplicationFee,
+                IsPaid = application.IsPaid,
+                DocumentCount = 0, // Would need to join with documents table
+                PaymentCount = 0  // Would need to join with payments table
             };
         }
     }

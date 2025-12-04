@@ -7,6 +7,7 @@ using Gov2Biz.DocumentService.CQRS.Handlers;
 using Gov2Biz.DocumentService.CQRS.Commands;
 using Gov2Biz.DocumentService.CQRS.Queries;
 using Gov2Biz.DocumentService.Services;
+using Gov2Biz.Shared.DTOs;
 using MediatR;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,19 +16,19 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<DocumentDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddMediatR(typeof(Program));
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 builder.Services.AddTransient<IRequestHandler<UploadDocumentCommand, DocumentDto>, UploadDocumentHandler>();
 builder.Services.AddTransient<IRequestHandler<GetDocumentQuery, DocumentDto>, GetDocumentHandler>();
-builder.Services.AddTransient<IRequestHandler<GetDocumentsQuery, Gov2Biz.Shared.Responses.PagedResult<DocumentDto>>, GetDocumentsHandler>();
+builder.Services.AddTransient<IRequestHandler<GetDocumentsQuery, PagedResult<DocumentDto>>, GetDocumentsHandler>();
 builder.Services.AddTransient<IRequestHandler<DeleteDocumentCommand, bool>, DeleteDocumentHandler>();
-builder.Services.AddTransient<IRequestHandler<DownloadDocumentQuery, DocumentDownloadDto>, DownloadDocumentHandler>();
+builder.Services.AddTransient<IRequestHandler<DownloadDocumentQuery, byte[]>, DownloadDocumentHandler>();
 builder.Services.AddTransient<IRequestHandler<GetEntityDocumentsQuery, List<DocumentDto>>, GetEntityDocumentsHandler>();
 
 builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
 
 // Add JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var secretKey = jwtSettings["Secret"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
+var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
 var key = Encoding.UTF8.GetBytes(secretKey);
 
 builder.Services.AddAuthentication(options =>

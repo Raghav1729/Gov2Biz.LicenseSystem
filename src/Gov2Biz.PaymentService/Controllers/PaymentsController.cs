@@ -3,6 +3,7 @@ using MediatR;
 using Gov2Biz.PaymentService.CQRS.Commands;
 using Gov2Biz.PaymentService.CQRS.Queries;
 using Gov2Biz.Shared.Responses;
+using Gov2Biz.Shared.DTOs;
 
 namespace Gov2Biz.PaymentService.Controllers
 {
@@ -18,7 +19,7 @@ namespace Gov2Biz.PaymentService.Controllers
         }
 
         [HttpPost]
-        public async Task<ApiResponse<PaymentDto>> CreatePayment([FromBody] CreatePaymentCommand command)
+        public async Task<ApiResponse<PaymentDto>> CreatePayment([FromBody] Gov2Biz.Shared.DTOs.CreatePaymentCommand command)
         {
             try
             {
@@ -60,7 +61,7 @@ namespace Gov2Biz.PaymentService.Controllers
         }
 
         [HttpGet]
-        public async Task<ApiResponse<PagedResult<PaymentDto>>> GetPayments(
+        public async Task<ApiResponse<Gov2Biz.Shared.DTOs.PagedResult<PaymentDto>>> GetPayments(
             [FromQuery] int? applicationId = null,
             [FromQuery] int? payerId = null,
             [FromQuery] string? status = null,
@@ -71,11 +72,11 @@ namespace Gov2Biz.PaymentService.Controllers
             try
             {
                 var result = await _mediator.Send(new GetPaymentsQuery(applicationId, payerId, status, paymentMethod, pageNumber, pageSize));
-                return new ApiResponse<PagedResult<PaymentDto>> { Success = true, Data = result };
+                return new ApiResponse<Gov2Biz.Shared.DTOs.PagedResult<PaymentDto>> { Success = true, Data = result };
             }
             catch (Exception ex)
             {
-                return new ApiResponse<PagedResult<PaymentDto>> { Success = false, Message = ex.Message };
+                return new ApiResponse<Gov2Biz.Shared.DTOs.PagedResult<PaymentDto>> { Success = false, Message = ex.Message };
             }
         }
 
@@ -98,7 +99,7 @@ namespace Gov2Biz.PaymentService.Controllers
         {
             try
             {
-                var result = await _mediator.Send(new RefundPaymentCommand(id, request.Amount, request.Reason, request.RefundedBy));
+                var result = await _mediator.Send(new RefundPaymentCommand(id, request.Reason));
                 return new ApiResponse<PaymentDto> { Success = true, Data = result };
             }
             catch (Exception ex)
@@ -108,19 +109,19 @@ namespace Gov2Biz.PaymentService.Controllers
         }
 
         [HttpGet("stats")]
-        public async Task<ApiResponse<PaymentStatsDto>> GetPaymentStats(
+        public async Task<ApiResponse<object>> GetPaymentStats(
             [FromQuery] DateTime? startDate = null,
             [FromQuery] DateTime? endDate = null,
             [FromQuery] string? status = null)
         {
             try
             {
-                var result = await _mediator.Send(new GetPaymentStatsQuery(startDate, endDate, status));
-                return new ApiResponse<PaymentStatsDto> { Success = true, Data = result };
+                var result = await _mediator.Send(new GetPaymentStatsQuery(StartDate: startDate, EndDate: endDate, Status: status));
+                return new ApiResponse<object> { Success = true, Data = result };
             }
             catch (Exception ex)
             {
-                return new ApiResponse<PaymentStatsDto> { Success = false, Message = ex.Message };
+                return new ApiResponse<object> { Success = false, Message = ex.Message };
             }
         }
     }

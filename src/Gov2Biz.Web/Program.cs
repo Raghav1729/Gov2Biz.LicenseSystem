@@ -4,10 +4,17 @@ using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Gov2Biz.Web.Services;
+using Gov2Biz.Shared.Configuration;
+using Gov2Biz.LicenseService.Data;
+using Microsoft.EntityFrameworkCore;
 using System.Net.Http;
 using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Add database context
+builder.Services.AddDbContext<LicenseDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Add services to the container
 builder.Services.AddControllersWithViews(options =>
@@ -15,6 +22,17 @@ builder.Services.AddControllersWithViews(options =>
     // Allow anonymous access to Auth controller
     options.Filters.Add(new AnonymousAuthorizationFilter());
 });
+
+// Register authentication service
+builder.Services.AddScoped<IAuthService>(provider => {
+    var context = provider.GetRequiredService<LicenseDbContext>();
+    var configuration = provider.GetRequiredService<IConfiguration>();
+    var logger = provider.GetRequiredService<ILogger<AuthService>>();
+    return new AuthService(context, configuration, logger);
+});
+
+// Add JWT settings
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
 
 // Add authentication
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

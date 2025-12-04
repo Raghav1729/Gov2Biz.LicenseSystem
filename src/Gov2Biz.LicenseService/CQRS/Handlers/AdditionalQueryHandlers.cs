@@ -18,10 +18,10 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
         public async Task<LicenseDto> Handle(GetLicenseQuery request, CancellationToken cancellationToken)
         {
             var license = await _context.Licenses
-                .FirstOrDefaultAsync(l => l.Id == request.Id, cancellationToken);
+                .FirstOrDefaultAsync(l => l.Id == request.LicenseId, cancellationToken);
 
             if (license == null)
-                throw new KeyNotFoundException($"License with ID {request.Id} not found");
+                throw new KeyNotFoundException($"License with ID {request.LicenseId} not found");
 
             return await MapToDto(license);
         }
@@ -38,11 +38,12 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
                 Type = license.Type,
                 Status = license.Status,
                 ApplicantName = $"{applicant?.FirstName} {applicant?.LastName}",
+                ApplicantEmail = applicant?.Email ?? "",
                 AgencyName = agency?.Name ?? "",
-                IssuedDate = license.IssuedDate,
-                ExpiryDate = license.ExpiryDate,
-                CreatedAt = license.CreatedAt,
-                Notes = license.Notes
+                IssuedAt = license.IssuedAt,
+                ExpiresAt = license.ExpiresAt,
+                Notes = license.Notes,
+                DaysUntilExpiry = license.ExpiresAt.HasValue ? (license.ExpiresAt.Value - DateTime.UtcNow).Days : 0
             };
         }
     }
@@ -60,20 +61,20 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
         {
             var query = _context.Licenses.AsQueryable();
 
-            if (!string.IsNullOrEmpty(request.AgencyId))
-                query = query.Where(l => l.AgencyId == request.AgencyId);
+            if (!string.IsNullOrEmpty(request.Filter.AgencyId))
+                query = query.Where(l => l.AgencyId == request.Filter.AgencyId);
 
-            if (!string.IsNullOrEmpty(request.Status))
-                query = query.Where(l => l.Status == request.Status);
+            if (!string.IsNullOrEmpty(request.Filter.Status))
+                query = query.Where(l => l.Status == request.Filter.Status);
 
-            if (request.ApplicantId.HasValue)
-                query = query.Where(l => l.ApplicantId == request.ApplicantId.Value);
+            if (request.Filter.ApplicantId.HasValue)
+                query = query.Where(l => l.ApplicantId == request.Filter.ApplicantId.Value);
 
             var totalCount = await query.CountAsync(cancellationToken);
             var licenses = await query
                 .OrderByDescending(l => l.CreatedAt)
-                .Skip((request.PageNumber - 1) * request.PageSize)
-                .Take(request.PageSize)
+                .Skip((request.Filter.PageNumber - 1) * request.Filter.PageSize)
+                .Take(request.Filter.PageSize)
                 .ToListAsync(cancellationToken);
 
             var dtos = new List<LicenseDto>();
@@ -86,8 +87,8 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
             {
                 Items = dtos,
                 TotalCount = totalCount,
-                PageNumber = request.PageNumber,
-                PageSize = request.PageSize
+                PageNumber = request.Filter.PageNumber,
+                PageSize = request.Filter.PageSize
             };
         }
 
@@ -103,11 +104,12 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
                 Type = license.Type,
                 Status = license.Status,
                 ApplicantName = $"{applicant?.FirstName} {applicant?.LastName}",
+                ApplicantEmail = applicant?.Email ?? "",
                 AgencyName = agency?.Name ?? "",
-                IssuedDate = license.IssuedDate,
-                ExpiryDate = license.ExpiryDate,
-                CreatedAt = license.CreatedAt,
-                Notes = license.Notes
+                IssuedAt = license.IssuedAt,
+                ExpiresAt = license.ExpiresAt,
+                Notes = license.Notes,
+                DaysUntilExpiry = license.ExpiresAt.HasValue ? (license.ExpiresAt.Value - DateTime.UtcNow).Days : 0
             };
         }
     }
@@ -149,11 +151,12 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
                 Type = license.Type,
                 Status = license.Status,
                 ApplicantName = $"{applicant?.FirstName} {applicant?.LastName}",
+                ApplicantEmail = applicant?.Email ?? "",
                 AgencyName = agency?.Name ?? "",
-                IssuedDate = license.IssuedDate,
-                ExpiryDate = license.ExpiryDate,
-                CreatedAt = license.CreatedAt,
-                Notes = license.Notes
+                IssuedAt = license.IssuedAt,
+                ExpiresAt = license.ExpiresAt,
+                Notes = license.Notes,
+                DaysUntilExpiry = license.ExpiresAt.HasValue ? (license.ExpiresAt.Value - DateTime.UtcNow).Days : 0
             };
         }
     }
@@ -171,7 +174,7 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
         {
             var applications = await _context.LicenseApplications
                 .Where(a => a.ApplicantId == request.UserId)
-                .OrderByDescending(a => a.SubmittedDate)
+                .OrderByDescending(a => a.SubmittedAt)
                 .ToListAsync(cancellationToken);
 
             var dtos = new List<LicenseApplicationDto>();
@@ -196,14 +199,20 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
                 LicenseType = application.LicenseType,
                 Status = application.Status,
                 ApplicantName = $"{applicant?.FirstName} {applicant?.LastName}",
+                ApplicantEmail = applicant?.Email ?? "",
                 AgencyName = agency?.Name ?? "",
-                SubmittedDate = application.SubmittedDate,
-                ReviewedDate = application.ReviewedDate,
-                ApprovedDate = application.ApprovedDate,
-                ReviewerName = reviewer != null ? $"{reviewer.FirstName} {reviewer.LastName}" : null,
-                Notes = application.Notes,
-                Fee = application.Fee,
-                PaymentCompleted = application.PaymentCompleted
+                ReviewerName = reviewer != null ? $"{reviewer.FirstName} {reviewer.LastName}" : "",
+                SubmittedAt = application.SubmittedAt,
+                ReviewedAt = application.ReviewedAt,
+                ApprovedAt = application.ApprovedAt,
+                RejectedAt = application.RejectedAt,
+                IssuedAt = application.IssuedAt,
+                ReviewerNotes = application.ReviewerNotes,
+                RejectionReason = application.RejectionReason,
+                ApplicationFee = application.ApplicationFee,
+                IsPaid = application.IsPaid,
+                DocumentCount = 0, // Would need to join with documents table
+                PaymentCount = 0  // Would need to join with payments table
             };
         }
     }
@@ -234,15 +243,15 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
             var rejectedApplications = await applicationQuery.CountAsync(a => a.Status == "Rejected", cancellationToken);
 
             var activeLicenses = await licenseQuery.CountAsync(l => l.Status == "Active", cancellationToken);
-            var expiredLicenses = await licenseQuery.CountAsync(l => l.Status == "Expired" || (l.ExpiryDate.HasValue && l.ExpiryDate < DateTime.UtcNow), cancellationToken);
+            var expiredLicenses = await licenseQuery.CountAsync(l => l.Status == "Expired" || (l.ExpiresAt.HasValue && l.ExpiresAt < DateTime.UtcNow), cancellationToken);
             
             var thirtyDaysFromNow = DateTime.UtcNow.AddDays(30);
             var licensesExpiringNext30Days = await licenseQuery
-                .CountAsync(l => l.Status == "Active" && l.ExpiryDate.HasValue && l.ExpiryDate <= thirtyDaysFromNow, cancellationToken);
+                .CountAsync(l => l.Status == "Active" && l.ExpiresAt.HasValue && l.ExpiresAt <= thirtyDaysFromNow, cancellationToken);
 
             var totalRevenue = await applicationQuery
-                .Where(a => a.PaymentCompleted)
-                .SumAsync(a => a.Fee, cancellationToken);
+                .Where(a => a.IsPaid)
+                .SumAsync(a => a.ApplicationFee, cancellationToken);
 
             return new DashboardStatsDto
             {
@@ -252,8 +261,11 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
                 RejectedApplications = rejectedApplications,
                 ActiveLicenses = activeLicenses,
                 ExpiredLicenses = expiredLicenses,
-                LicensesExpiringNext30Days = licensesExpiringNext30Days,
-                TotalRevenue = totalRevenue
+                ExpiringSoonLicenses = licensesExpiringNext30Days,
+                TotalRevenue = totalRevenue,
+                UnreadNotifications = 0, // Would need to join with notifications table
+                PendingPayments = 0, // Would need to join with payments table
+                RecentActivities = new List<RecentActivityDto>()
             };
         }
     }

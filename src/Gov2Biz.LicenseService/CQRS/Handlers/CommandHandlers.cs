@@ -18,15 +18,15 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
         public async Task<LicenseDto> Handle(ApproveLicenseApplicationCommand request, CancellationToken cancellationToken)
         {
             var application = await _context.LicenseApplications
-                .FirstOrDefaultAsync(a => a.Id == request.Id, cancellationToken);
+                .FirstOrDefaultAsync(a => a.Id == request.ApplicationId, cancellationToken);
 
             if (application == null)
-                throw new KeyNotFoundException($"Application with ID {request.Id} not found");
+                throw new KeyNotFoundException($"Application with ID {request.ApplicationId} not found");
 
             application.Status = "Approved";
             application.ApprovedAt = DateTime.UtcNow;
-            application.ReviewerId = int.Parse(request.ReviewerId);
-            application.ReviewerNotes = request.Notes;
+            application.ReviewerId = request.ReviewerId;
+            application.ReviewerNotes = request.ReviewerNotes;
 
             _context.LicenseApplications.Update(application);
             await _context.SaveChangesAsync(cancellationToken);
@@ -50,8 +50,7 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
                 AgencyName = agency?.Name ?? "",
                 IssuedAt = DateTime.UtcNow,
                 ExpiresAt = null,
-                CreatedAt = application.CreatedAt,
-                Notes = request.Notes,
+                Notes = application.ReviewerNotes,
                 DaysUntilExpiry = 0
             };
         }
@@ -68,13 +67,13 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
 
         public async Task<LicenseApplicationDto> Handle(RejectLicenseApplicationCommand request, CancellationToken cancellationToken)
         {
-            var application = await _context.LicenseApplications.FindAsync(request.Id);
+            var application = await _context.LicenseApplications.FindAsync(request.ApplicationId);
             if (application == null)
-                throw new KeyNotFoundException($"Application with ID {request.Id} not found");
+                throw new KeyNotFoundException($"Application with ID {request.ApplicationId} not found");
 
             application.Status = "Rejected";
-            application.ReviewerId = int.Parse(request.ReviewerId);
-            application.RejectionReason = request.Reason;
+            application.ReviewerId = request.ReviewerId;
+            application.RejectionReason = request.RejectionReason;
             application.RejectedAt = DateTime.UtcNow;
 
             _context.LicenseApplications.Update(application);
@@ -207,7 +206,7 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
             if (license.Status != "Active")
                 throw new InvalidOperationException("Only active licenses can be renewed");
 
-            license.ExpiresAt = request.NewExpiryDate;
+            license.ExpiresAt = DateTime.UtcNow.AddMonths(request.RenewalPeriodMonths);
             license.RenewedAt = DateTime.UtcNow;
             license.UpdatedAt = DateTime.UtcNow;
             license.Notes = $"Renewed on {DateTime.UtcNow:yyyy-MM-dd}. {license.Notes}";

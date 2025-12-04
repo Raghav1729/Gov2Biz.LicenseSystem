@@ -7,6 +7,7 @@ using Gov2Biz.PaymentService.CQRS.Handlers;
 using Gov2Biz.PaymentService.CQRS.Commands;
 using Gov2Biz.PaymentService.CQRS.Queries;
 using Gov2Biz.PaymentService.Services;
+using Gov2Biz.Shared.DTOs;
 using MediatR;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,13 +16,13 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<PaymentDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddMediatR(typeof(Program));
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 builder.Services.AddTransient<IRequestHandler<CreatePaymentCommand, PaymentDto>, CreatePaymentHandler>();
 builder.Services.AddTransient<IRequestHandler<GetPaymentQuery, PaymentDto>, GetPaymentHandler>();
-builder.Services.AddTransient<IRequestHandler<GetPaymentsQuery, Gov2Biz.Shared.Responses.PagedResult<PaymentDto>>, GetPaymentsHandler>();
+builder.Services.AddTransient<IRequestHandler<GetPaymentsQuery, PagedResult<PaymentDto>>, GetPaymentsHandler>();
 builder.Services.AddTransient<IRequestHandler<RefundPaymentCommand, PaymentDto>, RefundPaymentHandler>();
 builder.Services.AddTransient<IRequestHandler<GetUserPaymentsQuery, List<PaymentDto>>, GetUserPaymentsHandler>();
-builder.Services.AddTransient<IRequestHandler<GetPaymentStatsQuery, PaymentStatsDto>, GetPaymentStatsHandler>();
+builder.Services.AddTransient<IRequestHandler<GetPaymentStatsQuery, object>, GetPaymentStatsHandler>();
 builder.Services.AddTransient<IRequestHandler<GetPaymentByTransactionIdQuery, PaymentDto>, GetPaymentByTransactionIdHandler>();
 
 // Register payment gateways with keyed services
@@ -30,7 +31,7 @@ builder.Services.AddKeyedSingleton<IPaymentGateway, PayPalPaymentGateway>("paypa
 
 // Add JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var secretKey = jwtSettings["Secret"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
+var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
 var key = Encoding.UTF8.GetBytes(secretKey);
 
 builder.Services.AddAuthentication(options =>

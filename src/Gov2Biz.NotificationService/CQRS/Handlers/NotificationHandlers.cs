@@ -116,10 +116,10 @@ namespace Gov2Biz.NotificationService.CQRS.Handlers
         public async Task<NotificationDto> Handle(GetNotificationQuery request, CancellationToken cancellationToken)
         {
             var notification = await _context.Notifications
-                .FirstOrDefaultAsync(n => n.Id == request.Id, cancellationToken);
+                .FirstOrDefaultAsync(n => n.Id == request.NotificationId, cancellationToken);
 
             if (notification == null)
-                throw new KeyNotFoundException($"Notification with ID {request.Id} not found");
+                throw new KeyNotFoundException($"Notification with ID {request.NotificationId} not found");
 
             return MapToDto(notification);
         }
@@ -140,7 +140,7 @@ namespace Gov2Biz.NotificationService.CQRS.Handlers
         }
     }
 
-    public class GetNotificationsHandler : IRequestHandler<GetNotificationsQuery, Gov2Biz.Shared.Responses.PagedResult<NotificationDto>>
+    public class GetNotificationsHandler : IRequestHandler<GetNotificationsQuery, Gov2Biz.Shared.DTOs.PagedResult<NotificationDto>>
     {
         private readonly NotificationDbContext _context;
 
@@ -149,7 +149,7 @@ namespace Gov2Biz.NotificationService.CQRS.Handlers
             _context = context;
         }
 
-        public async Task<Gov2Biz.Shared.Responses.PagedResult<NotificationDto>> Handle(GetNotificationsQuery request, CancellationToken cancellationToken)
+        public async Task<Gov2Biz.Shared.DTOs.PagedResult<NotificationDto>> Handle(GetNotificationsQuery request, CancellationToken cancellationToken)
         {
             var query = _context.Notifications.Where(n => n.RecipientId == request.RecipientId);
 
@@ -168,7 +168,7 @@ namespace Gov2Biz.NotificationService.CQRS.Handlers
 
             var dtos = notifications.Select(MapToDto).ToList();
 
-            return new Gov2Biz.Shared.Responses.PagedResult<NotificationDto>
+            return new Gov2Biz.Shared.DTOs.PagedResult<NotificationDto>
             {
                 Items = dtos,
                 TotalCount = totalCount,
@@ -193,7 +193,7 @@ namespace Gov2Biz.NotificationService.CQRS.Handlers
         }
     }
 
-    public class MarkAsReadHandler : IRequestHandler<MarkAsReadCommand, bool>
+    public class MarkAsReadHandler : IRequestHandler<MarkAsReadCommand, NotificationDto>
     {
         private readonly NotificationDbContext _context;
 
@@ -202,13 +202,13 @@ namespace Gov2Biz.NotificationService.CQRS.Handlers
             _context = context;
         }
 
-        public async Task<bool> Handle(MarkAsReadCommand request, CancellationToken cancellationToken)
+        public async Task<NotificationDto> Handle(MarkAsReadCommand request, CancellationToken cancellationToken)
         {
             var notification = await _context.Notifications
-                .FirstOrDefaultAsync(n => n.Id == request.Id && n.RecipientId == request.UserId, cancellationToken);
+                .FirstOrDefaultAsync(n => n.Id == request.NotificationId, cancellationToken);
 
             if (notification == null)
-                throw new KeyNotFoundException($"Notification with ID {request.Id} not found");
+                throw new KeyNotFoundException($"Notification with ID {request.NotificationId} not found");
 
             notification.IsRead = true;
             notification.ReadAt = DateTime.UtcNow;
@@ -216,7 +216,22 @@ namespace Gov2Biz.NotificationService.CQRS.Handlers
             _context.Notifications.Update(notification);
             await _context.SaveChangesAsync(cancellationToken);
 
-            return true;
+            return MapToDto(notification);
+        }
+
+        private NotificationDto MapToDto(Notification notification)
+        {
+            return new NotificationDto
+            {
+                Id = notification.Id,
+                Title = notification.Title,
+                Message = notification.Message,
+                Type = notification.Type,
+                IsRead = notification.IsRead,
+                CreatedAt = notification.CreatedAt,
+                ReadAt = notification.ReadAt,
+                EntityReference = notification.EntityReference
+            };
         }
     }
 
@@ -260,7 +275,7 @@ namespace Gov2Biz.NotificationService.CQRS.Handlers
         public async Task<int> Handle(GetUnreadCountQuery request, CancellationToken cancellationToken)
         {
             return await _context.Notifications
-                .CountAsync(n => n.RecipientId == request.RecipientId && !n.IsRead, cancellationToken);
+                .CountAsync(n => n.RecipientId == request.UserId && !n.IsRead, cancellationToken);
         }
     }
 
@@ -276,7 +291,7 @@ namespace Gov2Biz.NotificationService.CQRS.Handlers
         public async Task<List<NotificationDto>> Handle(GetUserNotificationsQuery request, CancellationToken cancellationToken)
         {
             var notifications = await _context.Notifications
-                .Where(n => n.RecipientId == request.RecipientId)
+                .Where(n => n.RecipientId == request.UserId)
                 .OrderByDescending(n => n.CreatedAt)
                 .Take(50) // Limit to last 50 notifications
                 .ToListAsync(cancellationToken);
@@ -312,10 +327,10 @@ namespace Gov2Biz.NotificationService.CQRS.Handlers
         public async Task<bool> Handle(DeleteNotificationCommand request, CancellationToken cancellationToken)
         {
             var notification = await _context.Notifications
-                .FirstOrDefaultAsync(n => n.Id == request.Id && n.RecipientId == request.UserId, cancellationToken);
+                .FirstOrDefaultAsync(n => n.Id == request.NotificationId, cancellationToken);
 
             if (notification == null)
-                throw new KeyNotFoundException($"Notification with ID {request.Id} not found");
+                throw new KeyNotFoundException($"Notification with ID {request.NotificationId} not found");
 
             _context.Notifications.Remove(notification);
             await _context.SaveChangesAsync(cancellationToken);

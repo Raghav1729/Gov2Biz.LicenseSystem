@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
-using Gov2Biz.NotificationService.CQRS.Commands;
-using Gov2Biz.NotificationService.CQRS.Queries;
+using Gov2Biz.Shared.DTOs;
 using Gov2Biz.Shared.Responses;
 
 namespace Gov2Biz.NotificationService.Controllers
@@ -18,7 +17,7 @@ namespace Gov2Biz.NotificationService.Controllers
         }
 
         [HttpPost]
-        public async Task<ApiResponse<NotificationDto>> CreateNotification([FromBody] CreateNotificationCommand command)
+        public async Task<ApiResponse<NotificationDto>> CreateNotification([FromBody] Gov2Biz.Shared.DTOs.CreateNotificationCommand command)
         {
             try
             {
@@ -36,7 +35,7 @@ namespace Gov2Biz.NotificationService.Controllers
         {
             try
             {
-                var result = await _mediator.Send(new GetNotificationQuery(id));
+                var result = await _mediator.Send(new GetNotificationQuery(NotificationId: id));
                 return new ApiResponse<NotificationDto> { Success = true, Data = result };
             }
             catch (Exception ex)
@@ -46,7 +45,7 @@ namespace Gov2Biz.NotificationService.Controllers
         }
 
         [HttpGet]
-        public async Task<ApiResponse<PagedResult<NotificationDto>>> GetNotifications(
+        public async Task<ApiResponse<Gov2Biz.Shared.DTOs.PagedResult<NotificationDto>>> GetNotifications(
             [FromQuery] int recipientId,
             [FromQuery] string? type = null,
             [FromQuery] bool? isRead = null,
@@ -56,11 +55,11 @@ namespace Gov2Biz.NotificationService.Controllers
             try
             {
                 var result = await _mediator.Send(new GetNotificationsQuery(recipientId, type, isRead, pageNumber, pageSize));
-                return new ApiResponse<PagedResult<NotificationDto>> { Success = true, Data = result };
+                return new ApiResponse<Gov2Biz.Shared.DTOs.PagedResult<NotificationDto>> { Success = true, Data = result };
             }
             catch (Exception ex)
             {
-                return new ApiResponse<PagedResult<NotificationDto>> { Success = false, Message = ex.Message };
+                return new ApiResponse<Gov2Biz.Shared.DTOs.PagedResult<NotificationDto>> { Success = false, Message = ex.Message };
             }
         }
 
@@ -93,16 +92,16 @@ namespace Gov2Biz.NotificationService.Controllers
         }
 
         [HttpPut("{id}/read")]
-        public async Task<ApiResponse<bool>> MarkAsRead(int id, [FromBody] MarkAsReadRequest request)
+        public async Task<ApiResponse<NotificationDto>> MarkAsRead(int id, [FromBody] MarkAsReadRequest request)
         {
             try
             {
-                var result = await _mediator.Send(new MarkAsReadCommand(id, request.UserId));
-                return new ApiResponse<bool> { Success = true, Data = result };
+                var result = await _mediator.Send(new MarkAsReadCommand(NotificationId: id));
+                return new ApiResponse<NotificationDto> { Success = true, Data = result };
             }
             catch (Exception ex)
             {
-                return new ApiResponse<bool> { Success = false, Message = ex.Message };
+                return new ApiResponse<NotificationDto> { Success = false, Message = ex.Message };
             }
         }
 
@@ -111,7 +110,7 @@ namespace Gov2Biz.NotificationService.Controllers
         {
             try
             {
-                var result = await _mediator.Send(new MarkAllAsReadCommand(userId));
+                var result = await _mediator.Send(new MarkAllAsReadCommand(UserId: userId));
                 return new ApiResponse<bool> { Success = true, Data = result };
             }
             catch (Exception ex)
@@ -125,7 +124,7 @@ namespace Gov2Biz.NotificationService.Controllers
         {
             try
             {
-                var result = await _mediator.Send(new DeleteNotificationCommand(id, userId));
+                var result = await _mediator.Send(new DeleteNotificationCommand(NotificationId: id));
                 return new ApiResponse<bool> { Success = true, Data = result };
             }
             catch (Exception ex)

@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using MediatR;
-using Gov2Biz.LicenseService.CQRS.Queries;
 using Gov2Biz.Shared.DTOs;
 using System.Security.Claims;
 
@@ -73,7 +72,14 @@ namespace Gov2Biz.LicenseService.Controllers
         {
             try
             {
-                var result = await _mediator.Send(new GetLicenseApplicationsQuery(agencyId, status, applicantId, pageNumber, pageSize));
+                var result = await _mediator.Send(new GetLicenseApplicationsQuery(new LicenseApplicationFilter 
+            { 
+                AgencyId = agencyId, 
+                Status = status, 
+                ApplicantId = applicantId, 
+                PageNumber = pageNumber, 
+                PageSize = pageSize 
+            }));
                 return new ApiResponse<PagedResult<LicenseApplicationDto>> { Success = true, Data = result };
             }
             catch (Exception ex)
@@ -90,7 +96,7 @@ namespace Gov2Biz.LicenseService.Controllers
             {
                 // Set reviewer ID from JWT claims
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                command = command with { Id = id, ReviewerId = userId ?? "0" };
+                command = command with { ApplicationId = id, ReviewerId = int.Parse(userId ?? "0") };
                 var result = await _mediator.Send(command);
                 return new ApiResponse<LicenseDto> { Success = true, Data = result };
             }
@@ -108,7 +114,7 @@ namespace Gov2Biz.LicenseService.Controllers
             {
                 // Set reviewer ID from JWT claims
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                command = command with { Id = id, ReviewerId = userId ?? "0" };
+                command = command with { ApplicationId = id, ReviewerId = int.Parse(userId ?? "0") };
                 var result = await _mediator.Send(command);
                 return new ApiResponse<LicenseApplicationDto> { Success = true, Data = result };
             }
@@ -142,7 +148,14 @@ namespace Gov2Biz.LicenseService.Controllers
         {
             try
             {
-                var result = await _mediator.Send(new GetLicensesQuery(agencyId, status, applicantId, pageNumber, pageSize));
+                var result = await _mediator.Send(new GetLicensesQuery(new LicenseFilter 
+            { 
+                AgencyId = agencyId, 
+                Status = status, 
+                ApplicantId = applicantId, 
+                PageNumber = pageNumber, 
+                PageSize = pageSize 
+            }));
                 return new ApiResponse<PagedResult<LicenseDto>> { Success = true, Data = result };
             }
             catch (Exception ex)
@@ -158,7 +171,7 @@ namespace Gov2Biz.LicenseService.Controllers
             try
             {
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0";
-                var result = await _mediator.Send(new IssueLicenseCommand(applicationId, userId));
+                var result = await _mediator.Send(new IssueLicenseCommand(applicationId, int.Parse(userId)));
                 return new ApiResponse<LicenseDto> { Success = true, Data = result };
             }
             catch (Exception ex)

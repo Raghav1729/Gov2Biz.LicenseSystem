@@ -3,6 +3,7 @@ using MediatR;
 using Gov2Biz.DocumentService.CQRS.Commands;
 using Gov2Biz.DocumentService.CQRS.Queries;
 using Gov2Biz.Shared.Responses;
+using Gov2Biz.Shared.DTOs;
 
 namespace Gov2Biz.DocumentService.Controllers
 {
@@ -22,19 +23,13 @@ namespace Gov2Biz.DocumentService.Controllers
         {
             try
             {
-                using var memoryStream = new MemoryStream();
-                await request.File.CopyToAsync(memoryStream);
-                var fileBytes = memoryStream.ToArray();
-
                 var command = new UploadDocumentCommand(
-                    request.File.FileName,
-                    request.File.ContentType,
-                    request.File.Length,
-                    fileBytes,
+                    request.File,
                     request.EntityType,
                     request.EntityId,
                     request.DocumentType,
-                    request.UploadedBy
+                    request.UploadedBy,
+                    request.Notes
                 );
 
                 var result = await _mediator.Send(command);
@@ -61,7 +56,7 @@ namespace Gov2Biz.DocumentService.Controllers
         }
 
         [HttpGet]
-        public async Task<ApiResponse<PagedResult<DocumentDto>>> GetDocuments(
+        public async Task<ApiResponse<Gov2Biz.Shared.DTOs.PagedResult<DocumentDto>>> GetDocuments(
             [FromQuery] string? entityType = null,
             [FromQuery] int? entityId = null,
             [FromQuery] string? documentType = null,
@@ -72,11 +67,11 @@ namespace Gov2Biz.DocumentService.Controllers
             try
             {
                 var result = await _mediator.Send(new GetDocumentsQuery(entityType, entityId, documentType, uploadedBy, pageNumber, pageSize));
-                return new ApiResponse<PagedResult<DocumentDto>> { Success = true, Data = result };
+                return new ApiResponse<Gov2Biz.Shared.DTOs.PagedResult<DocumentDto>> { Success = true, Data = result };
             }
             catch (Exception ex)
             {
-                return new ApiResponse<PagedResult<DocumentDto>> { Success = false, Message = ex.Message };
+                return new ApiResponse<Gov2Biz.Shared.DTOs.PagedResult<DocumentDto>> { Success = false, Message = ex.Message };
             }
         }
 
@@ -85,7 +80,7 @@ namespace Gov2Biz.DocumentService.Controllers
         {
             try
             {
-                var result = await _mediator.Send(new GetEntityDocumentsQuery(entityType, entityId, documentType));
+                var result = await _mediator.Send(new GetEntityDocumentsQuery(entityType, entityId));
                 return new ApiResponse<List<DocumentDto>> { Success = true, Data = result };
             }
             catch (Exception ex)
@@ -100,7 +95,8 @@ namespace Gov2Biz.DocumentService.Controllers
             try
             {
                 var result = await _mediator.Send(new DownloadDocumentQuery(id));
-                return File(result.Content, result.ContentType, result.FileName);
+                var document = await _mediator.Send(new GetDocumentQuery(id));
+                return File(result, document.ContentType, document.FileName);
             }
             catch (Exception ex)
             {
@@ -113,7 +109,7 @@ namespace Gov2Biz.DocumentService.Controllers
         {
             try
             {
-                var result = await _mediator.Send(new DeleteDocumentCommand(id, deletedBy));
+                var result = await _mediator.Send(new DeleteDocumentCommand(id));
                 return new ApiResponse<bool> { Success = true, Data = result };
             }
             catch (Exception ex)
@@ -121,14 +117,5 @@ namespace Gov2Biz.DocumentService.Controllers
                 return new ApiResponse<bool> { Success = false, Message = ex.Message };
             }
         }
-    }
-
-    public class UploadDocumentRequest
-    {
-        public IFormFile File { get; set; } = null!;
-        public string EntityType { get; set; } = string.Empty;
-        public int EntityId { get; set; }
-        public string DocumentType { get; set; } = string.Empty;
-        public int UploadedBy { get; set; }
     }
 }
