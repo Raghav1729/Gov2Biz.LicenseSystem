@@ -74,7 +74,7 @@ namespace Gov2Biz.Web.Controllers
                 }
 
                 // Get related documents
-                var documents = await _documentServiceClient.GetDocumentsAsync("License", id);
+                var documents = await _documentServiceClient.GetDocumentsAsync(id, "License");
 
                 ViewBag.UserRole = userRole;
                 ViewBag.TenantId = tenantId;
@@ -278,7 +278,7 @@ namespace Gov2Biz.Web.Controllers
                 }
 
                 // Get related documents
-                var documents = await _documentServiceClient.GetDocumentsAsync("LicenseApplication", id);
+                var documents = await _documentServiceClient.GetDocumentsAsync(id, "LicenseApplication");
 
                 ViewBag.UserRole = userRole;
                 ViewBag.TenantId = tenantId;
@@ -314,13 +314,8 @@ namespace Gov2Biz.Web.Controllers
 
                 // Create notification - using ApplicationNumber instead of ApplicantId
                 await _notificationServiceClient.CreateNotificationAsync(
-                    new CreateNotificationCommand(
-                        "Application Approved",
-                        $"Your license application {result.ApplicationNumber} has been approved.",
-                        "Success",
-                        0, // Placeholder - we need the actual applicant ID
-                        result.ApplicationNumber
-                    )
+                    $"Your license application {result.ApplicationNumber} has been approved.",
+                    0 // Placeholder - we need the actual applicant ID
                 );
 
                 TempData["Success"] = "Application approved successfully!";
@@ -354,13 +349,8 @@ namespace Gov2Biz.Web.Controllers
 
                 // Create notification
                 await _notificationServiceClient.CreateNotificationAsync(
-                    new CreateNotificationCommand(
-                        "Application Rejected",
-                        $"Your license application {result.ApplicationNumber} has been rejected. Reason: {rejectionReason}",
-                        "Warning",
-                        0, // Placeholder - we need the actual applicant ID
-                        result.ApplicationNumber
-                    )
+                    $"Your license application {result.ApplicationNumber} has been rejected. Reason: {rejectionReason}",
+                    0 // Placeholder - we need the actual applicant ID
                 );
 
                 TempData["Success"] = "Application rejected successfully!";
@@ -386,13 +376,8 @@ namespace Gov2Biz.Web.Controllers
 
                 // Create notification
                 await _notificationServiceClient.CreateNotificationAsync(
-                    new CreateNotificationCommand(
-                        "License Issued",
-                        $"Your license {license.LicenseNumber} has been issued and is now active.",
-                        "Success",
-                        0, // Placeholder - we need the actual applicant ID
-                        license.LicenseNumber
-                    )
+                    $"Your license {license.LicenseNumber} has been issued and is now active.",
+                    0 // Placeholder - we need the actual applicant ID
                 );
 
                 TempData["Success"] = $"License {license.LicenseNumber} issued successfully!";
@@ -426,13 +411,8 @@ namespace Gov2Biz.Web.Controllers
 
                 // Create notification
                 await _notificationServiceClient.CreateNotificationAsync(
-                    new CreateNotificationCommand(
-                        "License Renewed",
-                        $"Your license {license.LicenseNumber} has been renewed for {renewalPeriodMonths} months.",
-                        "Success",
-                        0, // Placeholder - we need the actual applicant ID
-                        license.LicenseNumber
-                    )
+                    $"Your license {license.LicenseNumber} has been renewed for {renewalPeriodMonths} months.",
+                    0 // Placeholder - we need the actual applicant ID
                 );
 
                 TempData["Success"] = $"License {license.LicenseNumber} renewed successfully!";

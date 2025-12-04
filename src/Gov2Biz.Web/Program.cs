@@ -5,48 +5,49 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Gov2Biz.Web.Services;
 using Gov2Biz.Shared.Configuration;
-using Gov2Biz.LicenseService.Data;
-using Microsoft.EntityFrameworkCore;
-using System.Net.Http;
 using Microsoft.Extensions.DependencyInjection;
+using System.Net.Http;
+using Microsoft.EntityFrameworkCore;
+using Gov2Biz.Web.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add database context
-builder.Services.AddDbContext<LicenseDbContext>(options =>
+// Add HTTP client for API Gateway communication
+builder.Services.AddHttpClient<AuthService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+
+// Add service clients
+builder.Services.AddHttpClient<ILicenseServiceClient, LicenseServiceClient>();
+builder.Services.AddHttpClient<INotificationServiceClient, NotificationServiceClient>();
+builder.Services.AddHttpClient<IDocumentServiceClient, DocumentServiceClient>();
+builder.Services.AddHttpClient<IPaymentServiceClient, PaymentServiceClient>();
+
+// Add DbContext for direct database access
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Add services to the container
-builder.Services.AddControllersWithViews(options =>
-{
-    // Allow anonymous access to Auth controller
-    options.Filters.Add(new AnonymousAuthorizationFilter());
-});
-
-// Register authentication service
-builder.Services.AddScoped<IAuthService>(provider => {
-    var context = provider.GetRequiredService<LicenseDbContext>();
-    var configuration = provider.GetRequiredService<IConfiguration>();
-    var logger = provider.GetRequiredService<ILogger<AuthService>>();
-    return new AuthService(context, configuration, logger);
-});
-
-// Add JWT settings
-builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
-
-// Add authentication
+// Add cookie authentication for MVC web application
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
         options.LoginPath = "/Auth/Login";
         options.LogoutPath = "/Auth/Logout";
         options.AccessDeniedPath = "/Auth/AccessDenied";
+        options.ExpireTimeSpan = TimeSpan.FromHours(24);
+        options.SlidingExpiration = true;
         options.Cookie.HttpOnly = true;
         options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
         options.Cookie.SameSite = SameSiteMode.Lax;
-        options.ExpireTimeSpan = TimeSpan.FromHours(24);
-        options.SlidingExpiration = true;
     });
+
+// Add services to the container
+builder.Services.AddControllersWithViews(options =>
+{
+    // Add global authorization filter
+    options.Filters.Add(new AuthorizeFilter());
+    // Allow anonymous access to Auth controller
+    options.Filters.Add(new AnonymousAuthorizationFilter());
+});
 
 // Add authorization policies
 builder.Services.AddAuthorization(options =>
@@ -56,17 +57,8 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("Applicant", policy => policy.RequireRole("Administrator", "AgencyStaff", "Applicant"));
 });
 
-// Register HTTP clients for microservices
-builder.Services.AddHttpClient<ILicenseServiceClient, LicenseServiceClient>();
-builder.Services.AddHttpClient<IDocumentServiceClient, DocumentServiceClient>();
-builder.Services.AddHttpClient<INotificationServiceClient, NotificationServiceClient>();
-builder.Services.AddHttpClient<IPaymentServiceClient, PaymentServiceClient>();
-
-// Add scoped services
-builder.Services.AddScoped<ILicenseServiceClient, LicenseServiceClient>();
-builder.Services.AddScoped<IDocumentServiceClient, DocumentServiceClient>();
-builder.Services.AddScoped<INotificationServiceClient, NotificationServiceClient>();
-builder.Services.AddScoped<IPaymentServiceClient, PaymentServiceClient>();
+// Add logging
+builder.Services.AddLogging();
 
 var app = builder.Build();
 
@@ -76,6 +68,18 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
+
+// Add global 401 error handler
+app.Use(async (context, next) =>
+{
+    await next();
+    
+    if (context.Response.StatusCode == 401)
+    {
+        var returnUrl = context.Request.Path + context.Request.QueryString;
+        context.Response.Redirect($"/Auth/Login?ReturnUrl={Uri.EscapeDataString(returnUrl)}");
+    }
+});
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
@@ -87,7 +91,7 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Dashboard}/{action=Index}/{id?}");
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
 
@@ -105,7 +109,9 @@ public class AnonymousAuthorizationFilter : IAuthorizationFilter
         // For all other controllers, require authentication
         if (!context.HttpContext.User.Identity?.IsAuthenticated == true)
         {
-            context.Result = new ChallengeResult();
+            // Redirect to login page with return URL
+            var returnUrl = context.HttpContext.Request.Path + context.HttpContext.Request.QueryString;
+            context.Result = new RedirectToActionResult("Login", "Auth", new { ReturnUrl = returnUrl });
         }
     }
 }

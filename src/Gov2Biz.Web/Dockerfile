@@ -7,7 +7,8 @@ WORKDIR /src
 COPY ["src/Gov2Biz.Web/Gov2Biz.Web.csproj", "src/Gov2Biz.Web/"]
 COPY ["src/Gov2Biz.Shared/Gov2Biz.Shared.csproj", "src/Gov2Biz.Shared/"]
 RUN dotnet restore "src/Gov2Biz.Web/Gov2Biz.Web.csproj"
-COPY . .
+COPY ["src/Gov2Biz.Web/", "src/Gov2Biz.Web/"]
+COPY ["src/Gov2Biz.Shared/", "src/Gov2Biz.Shared/"]
 RUN dotnet publish "src/Gov2Biz.Web/Gov2Biz.Web.csproj" -c Release -o /app/publish
 
 FROM base AS final

@@ -67,6 +67,7 @@ namespace Gov2Biz.Web.Controllers
                     return new
                     {
                         Title = "Administrator Dashboard",
+                        TotalAgencies = stats.TotalAgencies,
                         TotalLicenses = stats.TotalLicenses,
                         ActiveLicenses = stats.ActiveLicenses,
                         PendingApplications = stats.PendingApplications,
@@ -78,7 +79,8 @@ namespace Gov2Biz.Web.Controllers
                         PendingPayments = stats.PendingPayments,
                         UnreadNotifications = stats.UnreadNotifications,
                         RecentActivity = stats.RecentActivities,
-                        Notifications = notifications.Take(5).ToList()
+                        Notifications = notifications.Take(5).ToList(),
+                        SystemHealth = "Healthy"
                     };
 
                 case "AgencyStaff":
@@ -97,7 +99,8 @@ namespace Gov2Biz.Web.Controllers
                         PendingPayments = stats.PendingPayments,
                         UnreadNotifications = stats.UnreadNotifications,
                         RecentActivity = stats.RecentActivities,
-                        Notifications = notifications.Take(5).ToList()
+                        Notifications = notifications.Take(5).ToList(),
+                        ProcessingTime = "2.5 days"
                     };
 
                 case "Applicant":
@@ -113,7 +116,9 @@ namespace Gov2Biz.Web.Controllers
                         ExpiringSoonLicenses = stats.ExpiringSoonLicenses,
                         UnreadNotifications = stats.UnreadNotifications,
                         RecentActivity = stats.RecentActivities,
-                        Notifications = notifications.Take(5).ToList()
+                        Notifications = notifications.Take(5).ToList(),
+                        RenewalsDue = stats.ExpiringSoonLicenses,
+                        NextAction = "Check pending applications"
                     };
 
                 default:

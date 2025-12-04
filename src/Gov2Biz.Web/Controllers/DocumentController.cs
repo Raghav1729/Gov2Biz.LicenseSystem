@@ -102,7 +102,7 @@ namespace Gov2Biz.Web.Controllers
             var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
             var tenantId = User.FindFirst("TenantId")?.Value;
 
-            var success = DeleteDocument(id, userRole, tenantId);
+            var success = DeleteDocument(id, userRole ?? "User", tenantId ?? "default");
             if (success)
             {
                 TempData["Success"] = "Document deleted successfully!";
@@ -172,7 +172,7 @@ namespace Gov2Biz.Web.Controllers
             };
         }
 
-        private bool DeleteDocument(int id, string role, string tenantId)
+        private bool DeleteDocument(int id, string role = "User", string tenantId = "default")
         {
             // Mock deletion - in real app, this would delete from database and storage
             return true;

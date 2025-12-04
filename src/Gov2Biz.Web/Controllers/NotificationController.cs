@@ -106,7 +106,7 @@ namespace Gov2Biz.Web.Controllers
             var tenantId = User.FindFirst("TenantId")?.Value;
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            var success = MarkAllNotificationsAsRead(userRole, tenantId, userId);
+            var success = MarkAllNotificationsAsRead(userRole ?? "User", tenantId ?? "default", userId ?? "");
             if (success)
             {
                 TempData["Success"] = "All notifications marked as read!";
@@ -127,7 +127,7 @@ namespace Gov2Biz.Web.Controllers
             var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
             var tenantId = User.FindFirst("TenantId")?.Value;
 
-            var success = DeleteNotification(id, userRole, tenantId);
+            var success = DeleteNotification(id, userRole ?? "User", tenantId ?? "default");
             if (success)
             {
                 TempData["Success"] = "Notification deleted successfully!";
@@ -152,7 +152,7 @@ namespace Gov2Biz.Web.Controllers
                     {
                         new { Id = 1, Message = "New license application submitted", Type = "License Application", Recipient = "admin@gov2biz.com", CreatedDate = DateTime.Parse("2024-02-01"), IsRead = false, LicenseId = 2, LicenseNumber = "LIC-2024-002", Priority = "High" },
                         new { Id = 2, Message = "Document upload pending approval", Type = "Document Review", Recipient = "admin@gov2biz.com", CreatedDate = DateTime.Parse("2024-02-02"), IsRead = true, LicenseId = 1, LicenseNumber = "LIC-2024-001", Priority = "Medium" },
-                        new { Id = 3, Message = "System maintenance scheduled", Type = "System", Recipient = "admin@gov2biz.com", CreatedDate = DateTime.Parse("2024-02-03"), IsRead = false, LicenseId = (int?)null, LicenseNumber = (string)null, Priority = "Low" }
+                        new { Id = 3, Message = "System maintenance scheduled", Type = "System", Recipient = "admin@gov2biz.com", CreatedDate = DateTime.Parse("2024-02-03"), IsRead = false, LicenseId = (int?)null, LicenseNumber = (string?)null, Priority = "Low" }
                     };
 
                 case "AgencyStaff":
@@ -203,13 +203,13 @@ namespace Gov2Biz.Web.Controllers
             return true;
         }
 
-        private bool MarkAllNotificationsAsRead(string role, string tenantId, string userId)
+        private bool MarkAllNotificationsAsRead(string role = "User", string tenantId = "default", string userId = "")
         {
             // Mock update - in real app, this would update database
             return true;
         }
 
-        private bool DeleteNotification(int id, string role, string tenantId)
+        private bool DeleteNotification(int id, string role = "User", string tenantId = "default")
         {
             // Mock deletion - in real app, this would delete from database
             return true;

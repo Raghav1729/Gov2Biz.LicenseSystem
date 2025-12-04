@@ -14,6 +14,7 @@ using Hangfire.Dashboard;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddDbContext<LicenseDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 

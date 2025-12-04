@@ -255,6 +255,11 @@ namespace Gov2Biz.LicenseService.Data
             return "plain:" + password;
         }
 
+        public string GetTenantId()
+        {
+            return _tenantId ?? "default";
+        }
+
         private void ConfigureDocument(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Document>(entity =>

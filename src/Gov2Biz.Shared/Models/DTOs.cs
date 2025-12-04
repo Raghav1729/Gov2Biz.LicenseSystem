@@ -182,6 +182,7 @@ namespace Gov2Biz.Shared.DTOs
     // Dashboard DTOs
     public class DashboardStatsDto
     {
+        public int TotalAgencies { get; set; }
         public int TotalApplications { get; set; }
         public int PendingApplications { get; set; }
         public int ApprovedApplications { get; set; }

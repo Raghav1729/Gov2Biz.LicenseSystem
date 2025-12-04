@@ -18,7 +18,7 @@ public class LoginViewModel
 
     [Required(ErrorMessage = "Tenant domain is required")]
     [Display(Name = "Tenant Domain")]
-    public string TenantDomain { get; set; } = "agency1.gov";
+    public string TenantDomain { get; set; } = "default";
 
     public string? ReturnUrl { get; set; }
 }

@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -6,45 +5,97 @@ using System.Text;
 using Gov2Biz.Shared.DTOs;
 using Gov2Biz.Shared.Models;
 using Gov2Biz.Shared.Configuration;
-using Gov2Biz.LicenseService.Data;
+using System.Net.Http;
+using Microsoft.EntityFrameworkCore;
+using Gov2Biz.Web.Data;
 
 namespace Gov2Biz.Web.Services
 {
     public class AuthService : IAuthService
     {
-        private readonly LicenseDbContext _context;
+        private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
         private readonly ILogger<AuthService> _logger;
+        private readonly ApplicationDbContext _context;
 
-        public AuthService(LicenseDbContext context, IConfiguration configuration, ILogger<AuthService> logger)
+        public AuthService(HttpClient httpClient, IConfiguration configuration, ILogger<AuthService> logger, ApplicationDbContext context)
         {
-            _context = context;
+            _httpClient = httpClient;
             _configuration = configuration;
             _logger = logger;
+            _context = context;
         }
 
         public async Task<LoginResponse> LoginAsync(LoginRequest request)
         {
             try
             {
-                var user = await ValidateCredentials(request.Email, request.Password, request.TenantDomain);
+                _logger.LogInformation($"Login attempt for email: {request.Email}, tenant: {request.TenantDomain}");
+
+                // Find user by email and tenant
+                var user = await _context.Users
+                    .FirstOrDefaultAsync(u => u.Email == request.Email && u.TenantId == request.TenantDomain);
+
                 if (user == null)
                 {
-                    return new LoginResponse
-                    {
-                        Success = false,
-                        Message = "Invalid email, password, or tenant domain"
+                    _logger.LogWarning($"User not found: {request.Email}");
+                    return new LoginResponse 
+                    { 
+                        Success = false, 
+                        Message = "Invalid email, password, or tenant domain" 
                     };
                 }
 
-                var token = await GenerateJwtToken(user);
-                var userDto = MapToUserDto(user);
+                // Simple password check (in production, use proper hashing)
+                if (user.PasswordHash != $"plain:{request.Password}")
+                {
+                    _logger.LogWarning($"Invalid password for user: {request.Email}");
+                    return new LoginResponse 
+                    { 
+                        Success = false, 
+                        Message = "Invalid email, password, or tenant domain" 
+                    };
+                }
+
+                if (!user.IsActive)
+                {
+                    _logger.LogWarning($"Inactive user attempted login: {request.Email}");
+                    return new LoginResponse 
+                    { 
+                        Success = false, 
+                        Message = "Account is inactive" 
+                    };
+                }
+
+                // Get agency information if user has an agency
+                var agencyName = "";
+                if (!string.IsNullOrEmpty(user.AgencyId))
+                {
+                    var agency = await _context.Agencies.FindAsync(user.AgencyId);
+                    agencyName = agency?.Name ?? "";
+                }
+
+                var userDto = new UserDto
+                {
+                    Id = user.Id,
+                    Email = user.Email,
+                    Name = $"{user.FirstName} {user.LastName}",
+                    Role = user.Role,
+                    AgencyId = user.AgencyId ?? "",
+                    AgencyName = agencyName,
+                    TenantId = user.TenantId,
+                    TenantName = user.TenantId, // Simplified
+                    IsActive = user.IsActive,
+                    CreatedAt = user.CreatedAt
+                };
+
+                _logger.LogInformation($"User logged in successfully: {request.Email}");
 
                 return new LoginResponse
                 {
                     Success = true,
                     Message = "Login successful",
-                    Token = token,
+                    Token = "local-auth", // Not used for cookie auth
                     User = userDto
                 };
             }
@@ -61,142 +112,67 @@ namespace Gov2Biz.Web.Services
 
         public async Task<UserDto?> GetUserByIdAsync(int userId)
         {
-            var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Id == userId);
+            try
+            {
+                var baseUrl = _configuration["ApiGateway:BaseUrl"] ?? "http://localhost:5001";
+                var userUrl = $"{baseUrl}/api/auth/user/{userId}";
 
-            if (user == null) return null;
-
-            var agency = !string.IsNullOrEmpty(user.AgencyId) 
-                ? await _context.Agencies.FirstOrDefaultAsync(a => a.Id == user.AgencyId)
-                : null;
-
-            return MapToUserDto(user, agency);
-        }
-
-        public async Task<UserDto?> GetUserByEmailAsync(string email, string tenantId)
-        {
-            var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Email == email && u.TenantId == tenantId);
-
-            if (user == null) return null;
-
-            var agency = !string.IsNullOrEmpty(user.AgencyId) 
-                ? await _context.Agencies.FirstOrDefaultAsync(a => a.Id == user.AgencyId)
-                : null;
-
-            return MapToUserDto(user, agency);
+                var response = await _httpClient.GetAsync(userUrl);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    return System.Text.Json.JsonSerializer.Deserialize<UserDto>(responseContent, new System.Text.Json.JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+                }
+                
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting user by ID: {UserId}", userId);
+                return null;
+            }
         }
 
         public async Task<bool> ValidateUserAsync(string email, string password, string tenantId)
         {
-            var user = await ValidateCredentials(email, password, tenantId);
-            return user != null;
+            var loginResponse = await LoginAsync(new LoginRequest 
+            { 
+                Email = email, 
+                Password = password, 
+                TenantDomain = tenantId 
+            });
+            return loginResponse.Success;
         }
 
-        private async Task<User?> ValidateCredentials(string email, string password, string tenantDomain)
+        public async Task<UserDto?> GetUserByEmailAsync(string email, string tenantId)
         {
-            // First get tenant by domain
-            var tenant = await _context.Tenants
-                .FirstOrDefaultAsync(t => t.Domain == tenantDomain && t.IsActive);
-
-            if (tenant == null)
+            try
             {
-                _logger.LogWarning("Tenant not found for domain: {TenantDomain}", tenantDomain);
+                var baseUrl = _configuration["ApiGateway:BaseUrl"] ?? "http://localhost:5001";
+                var userUrl = $"{baseUrl}/api/auth/user/by-email/{email}?tenantId={tenantId}";
+
+                var response = await _httpClient.GetAsync(userUrl);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    return System.Text.Json.JsonSerializer.Deserialize<UserDto>(responseContent, new System.Text.Json.JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+                }
+                
                 return null;
             }
-
-            // Get user by email and tenant
-            var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Email == email && u.TenantId == tenant.Id && u.IsActive);
-
-            if (user == null)
+            catch (Exception ex)
             {
-                _logger.LogWarning("User not found for email: {Email} in tenant: {TenantId}", email, tenant.Id);
+                _logger.LogError(ex, "Error getting user by email: {Email}", email);
                 return null;
             }
-
-            // Verify password
-            if (!VerifyPassword(password, user.PasswordHash))
-            {
-                _logger.LogWarning("Invalid password for email: {Email}", email);
-                return null;
-            }
-
-            return user;
-        }
-
-        private async Task<string> GenerateJwtToken(User user)
-        {
-            var jwtSettings = _configuration.GetSection("JwtSettings");
-            var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
-            var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Name, $"{user.FirstName} {user.LastName}"),
-                new Claim(ClaimTypes.Role, user.Role),
-                new Claim("TenantId", user.TenantId),
-                new Claim("AgencyId", user.AgencyId ?? "")
-            };
-
-            if (user.AgencyId != null)
-            {
-                var agency = await _context.Agencies.FirstOrDefaultAsync(a => a.Id == user.AgencyId);
-                claims.Add(new Claim("AgencyName", agency?.Name ?? ""));
-            }
-
-            var token = new JwtSecurityToken(
-                issuer: jwtSettings["Issuer"],
-                audience: jwtSettings["Audience"],
-                claims: claims,
-                expires: DateTime.UtcNow.AddHours(24),
-                signingCredentials: credentials
-            );
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
-        }
-
-        private UserDto MapToUserDto(User user, Agency? agency = null)
-        {
-            return new UserDto
-            {
-                Id = user.Id,
-                Email = user.Email,
-                Name = $"{user.FirstName} {user.LastName}",
-                Role = user.Role,
-                AgencyId = user.AgencyId ?? "",
-                AgencyName = agency?.Name ?? "",
-                TenantId = user.TenantId,
-                TenantName = "", // Would need to join with tenant table
-                IsActive = user.IsActive,
-                CreatedAt = user.CreatedAt
-            };
-        }
-
-        private bool VerifyPassword(string password, string? passwordHash)
-        {
-            if (string.IsNullOrEmpty(passwordHash))
-                return false;
-
-            // For the default accounts, use simple verification
-            // In production, use proper password hashing like BCrypt
-            var parts = passwordHash.Split(':');
-            if (parts.Length == 2)
-            {
-                var storedPassword = parts[1];
-                return password == storedPassword;
-            }
-
-            return false;
-        }
-
-        private string HashPassword(string password)
-        {
-            // Simple hashing for demo - in production use BCrypt or similar
-            return "plain:" + password;
         }
     }
 }

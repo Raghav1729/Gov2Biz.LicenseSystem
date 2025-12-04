@@ -230,6 +230,7 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
         {
             var applicationQuery = _context.LicenseApplications.AsQueryable();
             var licenseQuery = _context.Licenses.AsQueryable();
+            var agencyQuery = _context.Agencies.AsQueryable();
 
             if (!string.IsNullOrEmpty(request.AgencyId))
             {
@@ -237,6 +238,7 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
                 licenseQuery = licenseQuery.Where(l => l.AgencyId == request.AgencyId);
             }
 
+            var totalAgencies = await agencyQuery.CountAsync(cancellationToken);
             var totalApplications = await applicationQuery.CountAsync(cancellationToken);
             var pendingApplications = await applicationQuery.CountAsync(a => a.Status == "Submitted", cancellationToken);
             var approvedApplications = await applicationQuery.CountAsync(a => a.Status == "Approved", cancellationToken);
@@ -255,6 +257,7 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
 
             return new DashboardStatsDto
             {
+                TotalAgencies = totalAgencies,
                 TotalApplications = totalApplications,
                 PendingApplications = pendingApplications,
                 ApprovedApplications = approvedApplications,

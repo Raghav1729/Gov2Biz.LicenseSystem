@@ -18,7 +18,7 @@ namespace Gov2Biz.Web.Controllers
             ViewBag.TenantId = tenantId;
             ViewBag.UserId = userId;
 
-            var payments = GetPaymentsForUser(userRole, tenantId, userId);
+            var payments = GetPaymentsForUser(userRole ?? "User", tenantId ?? "default", userId ?? "");
             return View(payments);
         }
 
@@ -31,7 +31,7 @@ namespace Gov2Biz.Web.Controllers
             ViewBag.UserRole = userRole;
             ViewBag.TenantId = tenantId;
 
-            var payment = GetPaymentById(id, userRole, tenantId);
+            var payment = GetPaymentById(id, userRole ?? "User", tenantId ?? "default");
             if (payment == null)
             {
                 return NotFound();
@@ -50,7 +50,7 @@ namespace Gov2Biz.Web.Controllers
             ViewBag.TenantId = tenantId;
             ViewBag.LicenseId = licenseId;
 
-            var license = GetLicenseById(licenseId, userRole, tenantId);
+            var license = GetLicenseById(licenseId, userRole ?? "User", tenantId ?? "default");
             if (license == null)
             {
                 return NotFound();
@@ -83,7 +83,7 @@ namespace Gov2Biz.Web.Controllers
             ViewBag.UserRole = userRole;
             ViewBag.TenantId = tenantId;
             ViewBag.LicenseId = licenseId;
-            ViewBag.License = GetLicenseById(licenseId, userRole, tenantId);
+            ViewBag.License = GetLicenseById(licenseId, userRole ?? "User", tenantId ?? "default");
             return View();
         }
 
@@ -96,7 +96,7 @@ namespace Gov2Biz.Web.Controllers
             ViewBag.UserRole = userRole;
             ViewBag.TenantId = tenantId;
 
-            var payment = GetPaymentById(id, userRole, tenantId);
+            var payment = GetPaymentById(id, userRole ?? "User", tenantId ?? "default");
             if (payment == null)
             {
                 return NotFound();
@@ -119,7 +119,7 @@ namespace Gov2Biz.Web.Controllers
             var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
             var tenantId = User.FindFirst("TenantId")?.Value;
 
-            var success = ProcessRefund(id, reason, userRole, tenantId);
+            var success = ProcessRefund(id, reason ?? "", userRole ?? "User", tenantId ?? "default");
             if (success)
             {
                 TempData["Success"] = "Refund processed successfully!";
@@ -141,7 +141,7 @@ namespace Gov2Biz.Web.Controllers
             ViewBag.UserRole = userRole;
             ViewBag.TenantId = tenantId;
 
-            var payment = GetPaymentById(id, userRole, tenantId);
+            var payment = GetPaymentById(id, userRole ?? "User", tenantId ?? "default");
             if (payment == null)
             {
                 return NotFound();
@@ -184,13 +184,13 @@ namespace Gov2Biz.Web.Controllers
             }
         }
 
-        private dynamic GetPaymentById(int id, string role, string tenantId)
+        private dynamic GetPaymentById(int id, string role = "User", string tenantId = "default")
         {
             var payments = GetPaymentsForUser(role, tenantId, "") as object[];
             return payments?.FirstOrDefault(p => p.GetType().GetProperty("Id")?.GetValue(p)?.ToString() == id.ToString());
         }
 
-        private dynamic GetLicenseById(int id, string role, string tenantId)
+        private dynamic GetLicenseById(int id, string role = "User", string tenantId = "default")
         {
             // Mock license data
             return new { Id = id, LicenseNumber = $"LIC-2024-{id:D3}", Fee = 500.00m, Type = "Business License", Status = "Approved" };
@@ -218,7 +218,7 @@ namespace Gov2Biz.Web.Controllers
             };
         }
 
-        private bool ProcessRefund(int paymentId, string reason, string role, string tenantId)
+        private bool ProcessRefund(int paymentId, string reason, string role = "User", string tenantId = "default")
         {
             // Mock refund processing - in real app, this would integrate with payment gateway
             return true;

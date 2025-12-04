@@ -30,7 +30,7 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
                 ApplicationFee = request.ApplicationFee,
                 ReviewerNotes = request.ApplicantNotes,
                 IsPaid = false,
-                TenantId = "default" // Should be extracted from user context
+                TenantId = _context.GetTenantId() // Extract from context
             };
 
             _context.LicenseApplications.Add(application);

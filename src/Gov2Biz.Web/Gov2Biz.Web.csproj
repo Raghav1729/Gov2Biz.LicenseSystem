@@ -2,7 +2,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Gov2Biz.Shared\Gov2Biz.Shared.csproj" />
-    <ProjectReference Include="..\Gov2Biz.LicenseService\Gov2Biz.LicenseService.csproj" />
   </ItemGroup>
 
   <ItemGroup>
