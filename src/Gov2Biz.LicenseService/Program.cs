@@ -6,6 +6,7 @@ using Gov2Biz.LicenseService.Data;
 using Gov2Biz.LicenseService.CQRS.Handlers;
 using Gov2Biz.LicenseService.CQRS.Commands;
 using Gov2Biz.LicenseService.CQRS.Queries;
+using Gov2Biz.LicenseService.Services;
 using MediatR;
 using Hangfire;
 using Hangfire.SqlServer;
@@ -38,6 +39,9 @@ builder.Services.AddHangfire(config =>
           .UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddHangfireServer();
+
+// Add License Renewal Service
+builder.Services.AddScoped<LicenseRenewalService>();
 
 // Add JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
@@ -92,6 +96,18 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
 {
     Authorization = new[] { new HangfireAuthorizationFilter() }
 });
+
+// Schedule recurring jobs
+var recurringJobManager = app.Services.GetRequiredService<IRecurringJobManager>();
+recurringJobManager.AddOrUpdate<LicenseRenewalService>(
+    "check-expiring-licenses",
+    service => service.CheckExpiringLicenses(),
+    Cron.Daily);
+
+recurringJobManager.AddOrUpdate<LicenseRenewalService>(
+    "auto-renew-licenses",
+    service => service.AutoRenewLicenses(),
+    Cron.Daily);
 
 app.Run();
 

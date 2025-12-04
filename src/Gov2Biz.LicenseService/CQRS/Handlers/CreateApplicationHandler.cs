@@ -26,10 +26,11 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
                 AgencyId = request.AgencyId,
                 ApplicantId = request.ApplicantId,
                 Status = "Submitted",
-                SubmittedDate = DateTime.UtcNow,
-                Fee = request.Fee,
-                Notes = request.Notes,
-                PaymentCompleted = false
+                SubmittedAt = DateTime.UtcNow,
+                ApplicationFee = request.Fee,
+                ReviewerNotes = request.Notes,
+                IsPaid = false,
+                TenantId = "default" // Should be extracted from user context
             };
 
             _context.LicenseApplications.Add(application);
@@ -57,15 +58,21 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
                 ApplicationNumber = application.ApplicationNumber,
                 LicenseType = application.LicenseType,
                 Status = application.Status,
+                ApplicationFee = application.ApplicationFee,
+                IsPaid = application.IsPaid,
+                SubmittedAt = application.SubmittedAt,
+                ReviewedAt = application.ReviewedAt,
+                ApprovedAt = application.ApprovedAt,
+                RejectedAt = application.RejectedAt,
+                IssuedAt = application.IssuedAt,
                 ApplicantName = $"{applicant?.FirstName} {applicant?.LastName}",
+                ApplicantEmail = applicant?.Email ?? "",
                 AgencyName = agency?.Name ?? "",
-                SubmittedDate = application.SubmittedDate,
-                ReviewedDate = application.ReviewedDate,
-                ApprovedDate = application.ApprovedDate,
-                ReviewerName = reviewer != null ? $"{reviewer.FirstName} {reviewer.LastName}" : null,
-                Notes = application.Notes,
-                Fee = application.Fee,
-                PaymentCompleted = application.PaymentCompleted
+                ReviewerName = reviewer != null ? $"{reviewer.FirstName} {reviewer.LastName}" : "",
+                ReviewerNotes = application.ReviewerNotes,
+                RejectionReason = application.RejectionReason,
+                DocumentCount = 0, // Would need to join with Documents table
+                PaymentCount = 0  // Would need to join with Payments table
             };
         }
     }

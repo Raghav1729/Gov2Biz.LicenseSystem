@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Gov2Biz.Web.Services;
+using System.Net.Http;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,6 +37,18 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("AgencyStaff", policy => policy.RequireRole("Administrator", "AgencyStaff"));
     options.AddPolicy("Applicant", policy => policy.RequireRole("Administrator", "AgencyStaff", "Applicant"));
 });
+
+// Register HTTP clients for microservices
+builder.Services.AddHttpClient<ILicenseServiceClient, LicenseServiceClient>();
+builder.Services.AddHttpClient<IDocumentServiceClient, DocumentServiceClient>();
+builder.Services.AddHttpClient<INotificationServiceClient, NotificationServiceClient>();
+builder.Services.AddHttpClient<IPaymentServiceClient, PaymentServiceClient>();
+
+// Add scoped services
+builder.Services.AddScoped<ILicenseServiceClient, LicenseServiceClient>();
+builder.Services.AddScoped<IDocumentServiceClient, DocumentServiceClient>();
+builder.Services.AddScoped<INotificationServiceClient, NotificationServiceClient>();
+builder.Services.AddScoped<IPaymentServiceClient, PaymentServiceClient>();
 
 var app = builder.Build();
 

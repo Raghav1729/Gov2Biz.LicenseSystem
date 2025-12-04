@@ -1,44 +1,93 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using Gov2Biz.Web.Services;
+using Gov2Biz.Shared.DTOs;
 
 namespace Gov2Biz.Web.Controllers
 {
     [Authorize]
     public class LicenseController : Controller
     {
-        // GET: License
-        public IActionResult Index()
+        private readonly ILicenseServiceClient _licenseServiceClient;
+        private readonly IDocumentServiceClient _documentServiceClient;
+        private readonly INotificationServiceClient _notificationServiceClient;
+        private readonly ILogger<LicenseController> _logger;
+
+        public LicenseController(
+            ILicenseServiceClient licenseServiceClient,
+            IDocumentServiceClient documentServiceClient,
+            INotificationServiceClient notificationServiceClient,
+            ILogger<LicenseController> logger)
         {
-            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-            var tenantId = User.FindFirst("TenantId")?.Value;
+            _licenseServiceClient = licenseServiceClient;
+            _documentServiceClient = documentServiceClient;
+            _notificationServiceClient = notificationServiceClient;
+            _logger = logger;
+        }
+        // GET: License
+        public async Task<IActionResult> Index(int pageNumber = 1, int pageSize = 10)
+        {
+            try
+            {
+                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+                var tenantId = User.FindFirst("TenantId")?.Value;
+                var agencyId = User.FindFirst("AgencyId")?.Value;
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            ViewBag.UserRole = userRole;
-            ViewBag.TenantId = tenantId;
+                ViewBag.UserRole = userRole;
+                ViewBag.TenantId = tenantId;
 
-            // Get licenses based on user role
-            var model = GetLicensesForUser(userRole, tenantId);
+                var filter = new LicenseFilter
+                {
+                    PageNumber = pageNumber,
+                    PageSize = pageSize,
+                    AgencyId = userRole == "Administrator" ? agencyId : agencyId,
+                    ApplicantId = userRole == "Applicant" && int.TryParse(userIdClaim, out var uid) ? uid : null
+                };
 
-            return View(model);
+                var licenses = await _licenseServiceClient.GetLicensesAsync(filter);
+
+                return View(licenses);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading licenses");
+                ViewBag.ErrorMessage = "Unable to load licenses. Please try again later.";
+                return View(new PagedResult<LicenseDto>());
+            }
         }
 
         // GET: License/Details/5
-        public IActionResult Details(int id)
+        public async Task<IActionResult> Details(int id)
         {
-            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-            var tenantId = User.FindFirst("TenantId")?.Value;
-
-            var license = GetLicenseById(id, userRole, tenantId);
-            
-            if (license == null)
+            try
             {
-                return NotFound();
+                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+                var tenantId = User.FindFirst("TenantId")?.Value;
+
+                var license = await _licenseServiceClient.GetLicenseAsync(id);
+                
+                if (license == null || license.Id == 0)
+                {
+                    return NotFound();
+                }
+
+                // Get related documents
+                var documents = await _documentServiceClient.GetDocumentsAsync("License", id);
+
+                ViewBag.UserRole = userRole;
+                ViewBag.TenantId = tenantId;
+                ViewBag.Documents = documents;
+
+                return View(license);
             }
-
-            ViewBag.UserRole = userRole;
-            ViewBag.TenantId = tenantId;
-
-            return View(license);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading license details {LicenseId}", id);
+                ViewBag.ErrorMessage = "Unable to load license details. Please try again later.";
+                return View(new LicenseDto());
+            }
         }
 
         // GET: License/Create
@@ -55,19 +104,41 @@ namespace Gov2Biz.Web.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Administrator,AgencyStaff")]
-        public IActionResult Create(LicenseCreateViewModel model)
+        public async Task<IActionResult> Create(LicenseCreateViewModel model)
         {
             if (ModelState.IsValid)
             {
-                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-                var tenantId = User.FindFirst("TenantId")?.Value;
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                try
+                {
+                    var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+                    var tenantId = User.FindFirst("TenantId")?.Value;
+                    var agencyId = User.FindFirst("AgencyId")?.Value;
+                    var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-                // Create license logic here
-                var license = CreateLicense(model, userRole, tenantId, userId);
+                    if (!int.TryParse(userIdClaim, out var applicantId))
+                    {
+                        ModelState.AddModelError("", "Unable to determine user identity.");
+                        return View(model);
+                    }
 
-                TempData["Success"] = "License created successfully!";
-                return RedirectToAction(nameof(Details), new { id = license.Id });
+                    var command = new CreateLicenseApplicationCommand(
+                        model.LicenseType,
+                        agencyId ?? "default",
+                        applicantId,
+                        model.ApplicationFee,
+                        model.Description
+                    );
+
+                    var application = await _licenseServiceClient.CreateApplicationAsync(command);
+
+                    TempData["Success"] = $"License application {application.ApplicationNumber} created successfully!";
+                    return RedirectToAction("ApplicationDetails", new { id = application.Id });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error creating license application");
+                    ModelState.AddModelError("", "Failed to create license application. Please try again.");
+                }
             }
 
             ViewBag.UserRole = User.FindFirst(ClaimTypes.Role)?.Value;
@@ -172,75 +243,173 @@ namespace Gov2Biz.Web.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        #region Private Methods
-
-        private dynamic GetLicensesForUser(string role, string tenantId)
+        // GET: License/ApplicationDetails/5
+        public async Task<IActionResult> ApplicationDetails(int id)
         {
-            // Mock data - in real app, this would come from database/API
-            switch (role)
+            try
             {
-                case "Administrator":
-                    return new object[]
-                    {
-                        new { Id = 1, LicenseNumber = "LIC-2024-001", LicenseType = "Business License", ApplicantName = "John Doe", ApplicantEmail = "john.doe@email.com", BusinessName = "Doe Enterprises", Status = "Active", ExpiryDate = DateTime.Parse("2025-12-31"), IssuedDate = DateTime.Parse("2024-01-15"), AgencyName = "Department of Transportation", Description = "General business license for commercial operations" },
-                        new { Id = 2, LicenseNumber = "LIC-2024-002", LicenseType = "Health Permit", ApplicantName = "Jane Smith", ApplicantEmail = "jane.smith@email.com", BusinessName = "Smith Healthcare", Status = "Pending", ExpiryDate = (DateTime?)null, IssuedDate = (DateTime?)null, AgencyName = "Health Services Agency", Description = "Health department permit for medical facility operations" },
-                        new { Id = 3, LicenseNumber = "LIC-2024-003", LicenseType = "Food Service License", ApplicantName = "Bob Johnson", ApplicantEmail = "bob.johnson@email.com", BusinessName = "Johnson's Restaurant", Status = "Expired", ExpiryDate = DateTime.Parse("2024-06-30"), IssuedDate = DateTime.Parse("2022-07-01"), AgencyName = "Business Licensing Board", Description = "Food service license for restaurant operations" }
-                    };
+                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+                var tenantId = User.FindFirst("TenantId")?.Value;
 
-                case "AgencyStaff":
-                    return new object[]
-                    {
-                        new { Id = 1, LicenseNumber = "LIC-2024-001", LicenseType = "Business License", ApplicantName = "John Doe", ApplicantEmail = "john.doe@email.com", BusinessName = "Doe Enterprises", Status = "Active", ExpiryDate = DateTime.Parse("2025-12-31"), IssuedDate = DateTime.Parse("2024-01-15"), AgencyName = GetAgencyName(tenantId), Description = "General business license for commercial operations" },
-                        new { Id = 4, LicenseNumber = "LIC-2024-004", LicenseType = "Professional License", ApplicantName = "Alice Brown", ApplicantEmail = "alice.brown@email.com", BusinessName = "Brown Consulting", Status = "Under Review", ExpiryDate = (DateTime?)null, IssuedDate = (DateTime?)null, AgencyName = GetAgencyName(tenantId), Description = "Professional consulting license for business services" }
-                    };
+                var application = await _licenseServiceClient.GetApplicationAsync(id);
+                
+                if (application == null || application.Id == 0)
+                {
+                    return NotFound();
+                }
 
-                case "Applicant":
-                    return new object[]
-                    {
-                        new { Id = 1, LicenseNumber = "LIC-2024-001", LicenseType = "Business License", ApplicantName = "John Doe", ApplicantEmail = "john.doe@email.com", BusinessName = "Doe Enterprises", Status = "Active", ExpiryDate = DateTime.Parse("2025-12-31"), IssuedDate = DateTime.Parse("2024-01-15"), AgencyName = "Department of Transportation", Description = "General business license for commercial operations" },
-                        new { Id = 5, LicenseNumber = "APP-2024-002", LicenseType = "Food Service License", ApplicantName = "John Doe", ApplicantEmail = "john.doe@email.com", BusinessName = "Doe's Cafe", Status = "In Progress", ExpiryDate = (DateTime?)null, IssuedDate = (DateTime?)null, AgencyName = "Business Licensing Board", Description = "Food service license for cafe operations" }
-                    };
+                // Get related documents
+                var documents = await _documentServiceClient.GetDocumentsAsync("LicenseApplication", id);
 
-                default:
-                    return new object[0];
+                ViewBag.UserRole = userRole;
+                ViewBag.TenantId = tenantId;
+                ViewBag.Documents = documents;
+
+                return View(application);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading application details {ApplicationId}", id);
+                ViewBag.ErrorMessage = "Unable to load application details. Please try again later.";
+                return View(new LicenseApplicationDto());
             }
         }
 
-        private dynamic GetLicenseById(int id, string role, string tenantId)
+        // POST: License/Approve/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrator,AgencyStaff")]
+        public async Task<IActionResult> Approve(int id, string reviewerNotes)
         {
-            var licenses = GetLicensesForUser(role, tenantId) as object[];
-            return licenses?.FirstOrDefault(l => l.GetType().GetProperty("Id")?.GetValue(l)?.ToString() == id.ToString());
-        }
-
-        private dynamic CreateLicense(LicenseCreateViewModel model, string role, string tenantId, string userId)
-        {
-            // Mock creation - in real app, this would call API/database
-            return new
+            try
             {
-                Id = new Random().Next(100, 999),
-                LicenseNumber = $"LIC-{DateTime.Now.Year}-{new Random().Next(1000, 9999):D4}",
-                LicenseType = model.LicenseType,
-                ApplicantName = model.ApplicantName,
-                ApplicantEmail = model.ApplicantEmail,
-                BusinessName = model.BusinessName,
-                Description = model.Description,
-                Status = "Pending",
-                ExpiryDate = model.ExpiryDate,
-                IssuedDate = DateTime.Now,
-                AgencyName = GetAgencyName(tenantId)
-            };
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0";
+                var command = new ApproveLicenseApplicationCommand(id, userIdClaim, reviewerNotes);
+
+                var result = await _licenseServiceClient.ApproveApplicationAsync(id, command);
+
+                // Create notification
+                await _notificationServiceClient.CreateNotificationAsync(
+                    new CreateNotificationCommand(
+                        "Application Approved",
+                        $"Your license application {result.ApplicationNumber} has been approved.",
+                        "Success",
+                        result.ApplicantId ?? 0,
+                        result.ApplicationNumber
+                    )
+                );
+
+                TempData["Success"] = "Application approved successfully!";
+                return RedirectToAction("ApplicationDetails", new { id });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error approving application {ApplicationId}", id);
+                TempData["Error"] = "Failed to approve application. Please try again.";
+                return RedirectToAction("ApplicationDetails", new { id });
+            }
         }
 
-        private bool UpdateLicense(int id, LicenseEditViewModel model, string role, string tenantId)
+        // POST: License/Reject/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrator,AgencyStaff")]
+        public async Task<IActionResult> Reject(int id, string rejectionReason)
         {
-            // Mock update - in real app, this would call API/database
-            return true;
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0";
+                var command = new RejectLicenseApplicationCommand(id, userIdClaim, rejectionReason);
+
+                var result = await _licenseServiceClient.RejectApplicationAsync(id, command);
+
+                // Create notification
+                await _notificationServiceClient.CreateNotificationAsync(
+                    new CreateNotificationCommand(
+                        "Application Rejected",
+                        $"Your license application {result.ApplicationNumber} has been rejected. Reason: {rejectionReason}",
+                        "Warning",
+                        result.ApplicantId ?? 0,
+                        result.ApplicationNumber
+                    )
+                );
+
+                TempData["Success"] = "Application rejected successfully!";
+                return RedirectToAction("ApplicationDetails", new { id });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error rejecting application {ApplicationId}", id);
+                TempData["Error"] = "Failed to reject application. Please try again.";
+                return RedirectToAction("ApplicationDetails", new { id });
+            }
         }
 
-        private bool DeleteLicense(int id, string role)
+        // POST: License/Issue/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrator,AgencyStaff")]
+        public async Task<IActionResult> Issue(int applicationId)
         {
-            // Mock delete - in real app, this would call API/database
-            return role == "Administrator";
+            try
+            {
+                var license = await _licenseServiceClient.IssueLicenseAsync(applicationId);
+
+                // Create notification
+                await _notificationServiceClient.CreateNotificationAsync(
+                    new CreateNotificationCommand(
+                        "License Issued",
+                        $"Your license {license.LicenseNumber} has been issued and is now active.",
+                        "Success",
+                        license.ApplicantId ?? 0,
+                        license.LicenseNumber
+                    )
+                );
+
+                TempData["Success"] = $"License {license.LicenseNumber} issued successfully!";
+                return RedirectToAction("Details", new { id = license.Id });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error issuing license for application {ApplicationId}", applicationId);
+                TempData["Error"] = "Failed to issue license. Please try again.";
+                return RedirectToAction("ApplicationDetails", new { id = applicationId });
+            }
+        }
+
+        // POST: License/Renew/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrator,AgencyStaff,Applicant")]
+        public async Task<IActionResult> Renew(int id, int renewalPeriodMonths = 12)
+        {
+            try
+            {
+                var newExpiryDate = DateTime.UtcNow.AddMonths(renewalPeriodMonths);
+                var command = new RenewLicenseCommand(id, newExpiryDate);
+
+                var license = await _licenseServiceClient.RenewLicenseAsync(id, command);
+
+                // Create notification
+                await _notificationServiceClient.CreateNotificationAsync(
+                    new CreateNotificationCommand(
+                        "License Renewed",
+                        $"Your license {license.LicenseNumber} has been renewed until {newExpiryDate:yyyy-MM-dd}.",
+                        "Success",
+                        license.ApplicantId ?? 0,
+                        license.LicenseNumber
+                    )
+                );
+
+                TempData["Success"] = $"License {license.LicenseNumber} renewed successfully!";
+                return RedirectToAction("Details", new { id });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error renewing license {LicenseId}", id);
+                TempData["Error"] = "Failed to renew license. Please try again.";
+                return RedirectToAction("Details", new { id });
+            }
         }
 
         private string GetAgencyName(string tenantId)
@@ -262,11 +431,17 @@ namespace Gov2Biz.Web.Controllers
     public class LicenseCreateViewModel
     {
         public string LicenseType { get; set; } = string.Empty;
-        public string ApplicantName { get; set; } = string.Empty;
-        public string ApplicantEmail { get; set; } = string.Empty;
-        public string BusinessName { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
-        public DateTime? ExpiryDate { get; set; }
+        public decimal ApplicationFee { get; set; } = 100.00m;
+        public string[] AvailableLicenseTypes { get; } = new[]
+        {
+            "Business License",
+            "Professional License",
+            "Health Permit",
+            "Food Service License",
+            "Construction Permit",
+            "Environmental Permit"
+        };
     }
 
     public class LicenseEditViewModel

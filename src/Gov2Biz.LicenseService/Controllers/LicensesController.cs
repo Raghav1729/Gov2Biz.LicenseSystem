@@ -1,13 +1,16 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using MediatR;
 using Gov2Biz.LicenseService.CQRS.Commands;
 using Gov2Biz.LicenseService.CQRS.Queries;
 using Gov2Biz.Shared.Responses;
+using System.Security.Claims;
 
 namespace Gov2Biz.LicenseService.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class LicensesController : ControllerBase
     {
         private readonly IMediator _mediator;
@@ -18,10 +21,20 @@ namespace Gov2Biz.LicenseService.Controllers
         }
 
         [HttpPost("applications")]
+        [Authorize(Roles = "Administrator,AgencyStaff,Applicant")]
         public async Task<ApiResponse<LicenseApplicationDto>> CreateApplication([FromBody] CreateLicenseApplicationCommand command)
         {
             try
             {
+                // Set tenant and applicant from JWT claims
+                var tenantId = User.FindFirst("TenantId")?.Value ?? "default";
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                
+                if (int.TryParse(userId, out var applicantId))
+                {
+                    command = command with { ApplicantId = applicantId };
+                }
+                
                 var result = await _mediator.Send(command);
                 return new ApiResponse<LicenseApplicationDto> { Success = true, Data = result };
             }
@@ -65,11 +78,15 @@ namespace Gov2Biz.LicenseService.Controllers
         }
 
         [HttpPut("applications/{id}/approve")]
+        [Authorize(Roles = "Administrator,AgencyStaff")]
         public async Task<ApiResponse<LicenseDto>> ApproveApplication(int id, [FromBody] ApproveLicenseApplicationCommand command)
         {
             try
             {
-                var result = await _mediator.Send(command with { Id = id });
+                // Set reviewer ID from JWT claims
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                command = command with { Id = id, ReviewerId = userId ?? "0" };
+                var result = await _mediator.Send(command);
                 return new ApiResponse<LicenseDto> { Success = true, Data = result };
             }
             catch (Exception ex)
@@ -79,11 +96,15 @@ namespace Gov2Biz.LicenseService.Controllers
         }
 
         [HttpPut("applications/{id}/reject")]
+        [Authorize(Roles = "Administrator,AgencyStaff")]
         public async Task<ApiResponse<LicenseApplicationDto>> RejectApplication(int id, [FromBody] RejectLicenseApplicationCommand command)
         {
             try
             {
-                var result = await _mediator.Send(command with { Id = id });
+                // Set reviewer ID from JWT claims
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                command = command with { Id = id, ReviewerId = userId ?? "0" };
+                var result = await _mediator.Send(command);
                 return new ApiResponse<LicenseApplicationDto> { Success = true, Data = result };
             }
             catch (Exception ex)
@@ -125,17 +146,34 @@ namespace Gov2Biz.LicenseService.Controllers
             }
         }
 
-        [HttpGet("dashboard/stats")]
-        public async Task<ApiResponse<DashboardStatsDto>> GetDashboardStats([FromQuery] string? agencyId = null)
+        [HttpPost("{applicationId}/issue")]
+        [Authorize(Roles = "Administrator,AgencyStaff")]
+        public async Task<ApiResponse<LicenseDto>> IssueLicense(int applicationId)
         {
             try
             {
-                var result = await _mediator.Send(new GetDashboardStatsQuery(agencyId));
-                return new ApiResponse<DashboardStatsDto> { Success = true, Data = result };
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0";
+                var result = await _mediator.Send(new IssueLicenseCommand(applicationId, userId));
+                return new ApiResponse<LicenseDto> { Success = true, Data = result };
             }
             catch (Exception ex)
             {
-                return new ApiResponse<DashboardStatsDto> { Success = false, Message = ex.Message };
+                return new ApiResponse<LicenseDto> { Success = false, Message = ex.Message };
+            }
+        }
+
+        [HttpPut("{id}/renew")]
+        [Authorize(Roles = "Administrator,AgencyStaff,Applicant")]
+        public async Task<ApiResponse<LicenseDto>> RenewLicense(int id, [FromBody] RenewLicenseCommand command)
+        {
+            try
+            {
+                var result = await _mediator.Send(command with { LicenseId = id });
+                return new ApiResponse<LicenseDto> { Success = true, Data = result };
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<LicenseDto> { Success = false, Message = ex.Message };
             }
         }
     }

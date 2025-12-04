@@ -24,9 +24,9 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
                 throw new KeyNotFoundException($"Application with ID {request.Id} not found");
 
             application.Status = "Approved";
-            application.ApprovedDate = DateTime.UtcNow;
-            application.ReviewerId = request.ReviewerId;
-            application.Notes = request.Notes;
+            application.ApprovedAt = DateTime.UtcNow;
+            application.ReviewerId = int.Parse(request.ReviewerId);
+            application.ReviewerNotes = request.Notes;
 
             _context.LicenseApplications.Update(application);
             await _context.SaveChangesAsync(cancellationToken);
@@ -46,11 +46,13 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
                 Type = application.LicenseType,
                 Status = "Approved",
                 ApplicantName = $"{applicant?.FirstName} {applicant?.LastName}",
+                ApplicantEmail = applicant?.Email ?? "",
                 AgencyName = agency?.Name ?? "",
-                IssuedDate = DateTime.UtcNow,
-                ExpiryDate = null,
-                CreatedAt = application.ApprovedDate ?? DateTime.UtcNow,
-                Notes = application.Notes
+                IssuedAt = DateTime.UtcNow,
+                ExpiresAt = null,
+                CreatedAt = application.CreatedAt,
+                Notes = request.Notes,
+                DaysUntilExpiry = 0
             };
         }
     }
@@ -71,8 +73,9 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
                 throw new KeyNotFoundException($"Application with ID {request.Id} not found");
 
             application.Status = "Rejected";
-            application.ReviewerId = request.ReviewerId;
-            application.Notes = request.Reason;
+            application.ReviewerId = int.Parse(request.ReviewerId);
+            application.RejectionReason = request.Reason;
+            application.RejectedAt = DateTime.UtcNow;
 
             _context.LicenseApplications.Update(application);
             await _context.SaveChangesAsync(cancellationToken);
@@ -92,15 +95,21 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
                 ApplicationNumber = application.ApplicationNumber,
                 LicenseType = application.LicenseType,
                 Status = application.Status,
+                ApplicationFee = application.ApplicationFee,
+                IsPaid = application.IsPaid,
+                SubmittedAt = application.SubmittedAt,
+                ReviewedAt = application.ReviewedAt,
+                ApprovedAt = application.ApprovedAt,
+                RejectedAt = application.RejectedAt,
+                IssuedAt = application.IssuedAt,
                 ApplicantName = $"{applicant?.FirstName} {applicant?.LastName}",
+                ApplicantEmail = applicant?.Email ?? "",
                 AgencyName = agency?.Name ?? "",
-                SubmittedDate = application.SubmittedDate,
-                ReviewedDate = application.ReviewedDate,
-                ApprovedDate = application.ApprovedDate,
-                ReviewerName = reviewer != null ? $"{reviewer.FirstName} {reviewer.LastName}" : null,
-                Notes = application.Notes,
-                Fee = application.Fee,
-                PaymentCompleted = application.PaymentCompleted
+                ReviewerName = reviewer != null ? $"{reviewer.FirstName} {reviewer.LastName}" : "",
+                ReviewerNotes = application.ReviewerNotes,
+                RejectionReason = application.RejectionReason,
+                DocumentCount = 0, // Would need to join with Documents table
+                PaymentCount = 0  // Would need to join with Payments table
             };
         }
     }
@@ -131,10 +140,12 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
                 LicenseNumber = licenseNumber,
                 Type = application.LicenseType,
                 Status = "Active",
+                ApplicationId = application.Id,
                 ApplicantId = application.ApplicantId,
                 AgencyId = application.AgencyId,
-                IssuedDate = DateTime.UtcNow,
-                ExpiryDate = DateTime.UtcNow.AddYears(1),
+                TenantId = application.TenantId,
+                IssuedAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddYears(1),
                 CreatedAt = DateTime.UtcNow,
                 Notes = $"Issued from application {application.ApplicationNumber}"
             };
@@ -156,6 +167,7 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
         {
             var applicant = await _context.Users.FindAsync(license.ApplicantId);
             var agency = await _context.Agencies.FindAsync(license.AgencyId);
+            var application = await _context.LicenseApplications.FindAsync(license.ApplicationId);
 
             return new LicenseDto
             {
@@ -163,12 +175,16 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
                 LicenseNumber = license.LicenseNumber,
                 Type = license.Type,
                 Status = license.Status,
+                IssuedAt = license.IssuedAt,
+                ExpiresAt = license.ExpiresAt,
+                RenewedAt = license.RenewedAt,
                 ApplicantName = $"{applicant?.FirstName} {applicant?.LastName}",
+                ApplicantEmail = applicant?.Email ?? "",
                 AgencyName = agency?.Name ?? "",
-                IssuedDate = license.IssuedDate,
-                ExpiryDate = license.ExpiryDate,
-                CreatedAt = license.CreatedAt,
-                Notes = license.Notes
+                ApplicationNumber = application?.ApplicationNumber ?? "",
+                Notes = license.Notes,
+                DaysUntilExpiry = license.ExpiresAt.HasValue ? 
+                    (license.ExpiresAt.Value - DateTime.UtcNow).Days : 0
             };
         }
     }
@@ -191,7 +207,8 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
             if (license.Status != "Active")
                 throw new InvalidOperationException("Only active licenses can be renewed");
 
-            license.ExpiryDate = request.NewExpiryDate;
+            license.ExpiresAt = request.NewExpiryDate;
+            license.RenewedAt = DateTime.UtcNow;
             license.UpdatedAt = DateTime.UtcNow;
             license.Notes = $"Renewed on {DateTime.UtcNow:yyyy-MM-dd}. {license.Notes}";
 
@@ -205,6 +222,7 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
         {
             var applicant = await _context.Users.FindAsync(license.ApplicantId);
             var agency = await _context.Agencies.FindAsync(license.AgencyId);
+            var application = await _context.LicenseApplications.FindAsync(license.ApplicationId);
 
             return new LicenseDto
             {
@@ -212,12 +230,16 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
                 LicenseNumber = license.LicenseNumber,
                 Type = license.Type,
                 Status = license.Status,
+                IssuedAt = license.IssuedAt,
+                ExpiresAt = license.ExpiresAt,
+                RenewedAt = license.RenewedAt,
                 ApplicantName = $"{applicant?.FirstName} {applicant?.LastName}",
+                ApplicantEmail = applicant?.Email ?? "",
                 AgencyName = agency?.Name ?? "",
-                IssuedDate = license.IssuedDate,
-                ExpiryDate = license.ExpiryDate,
-                CreatedAt = license.CreatedAt,
-                Notes = license.Notes
+                ApplicationNumber = application?.ApplicationNumber ?? "",
+                Notes = license.Notes,
+                DaysUntilExpiry = license.ExpiresAt.HasValue ? 
+                    (license.ExpiresAt.Value - DateTime.UtcNow).Days : 0
             };
         }
     }

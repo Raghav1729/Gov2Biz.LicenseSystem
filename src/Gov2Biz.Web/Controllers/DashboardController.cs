@@ -1,29 +1,65 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using Gov2Biz.Web.Services;
+using Gov2Biz.Shared.DTOs;
 
 namespace Gov2Biz.Web.Controllers
 {
     [Authorize]
     public class DashboardController : Controller
     {
-        public IActionResult Index()
+        private readonly ILicenseServiceClient _licenseServiceClient;
+        private readonly INotificationServiceClient _notificationServiceClient;
+        private readonly ILogger<DashboardController> _logger;
+
+        public DashboardController(
+            ILicenseServiceClient licenseServiceClient,
+            INotificationServiceClient notificationServiceClient,
+            ILogger<DashboardController> logger)
         {
-            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-            var userFullName = User.FindFirst("FullName")?.Value;
-            var tenantId = User.FindFirst("TenantId")?.Value;
+            _licenseServiceClient = licenseServiceClient;
+            _notificationServiceClient = notificationServiceClient;
+            _logger = logger;
+        }
+        public async Task<IActionResult> Index()
+        {
+            try
+            {
+                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+                var userFullName = User.FindFirst("FullName")?.Value;
+                var tenantId = User.FindFirst("TenantId")?.Value;
+                var agencyId = User.FindFirst("AgencyId")?.Value;
 
-            ViewBag.UserRole = userRole;
-            ViewBag.UserFullName = userFullName;
-            ViewBag.TenantId = tenantId;
+                ViewBag.UserRole = userRole;
+                ViewBag.UserFullName = userFullName;
+                ViewBag.TenantId = tenantId;
 
-            // Get dashboard statistics based on role
-            var model = GetDashboardData(userRole, tenantId);
+                // Get real dashboard statistics from services
+                var dashboardStats = await _licenseServiceClient.GetDashboardStatsAsync(agencyId);
+                var notifications = new List<NotificationDto>();
+                
+                // Get notifications if user ID is available
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (int.TryParse(userIdClaim, out var userId))
+                {
+                    notifications = await _notificationServiceClient.GetNotificationsAsync(userId);
+                }
 
-            return View(model);
+                // Get dashboard data based on role
+                var model = GetDashboardData(userRole, tenantId, agencyId, dashboardStats, notifications);
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading dashboard");
+                ViewBag.ErrorMessage = "Unable to load dashboard data. Please try again later.";
+                return View(GetErrorDashboardData());
+            }
         }
 
-        private dynamic GetDashboardData(string role, string tenantId)
+        private dynamic GetDashboardData(string role, string tenantId, string? agencyId, DashboardStatsDto stats, List<NotificationDto> notifications)
         {
             switch (role)
             {
@@ -31,18 +67,18 @@ namespace Gov2Biz.Web.Controllers
                     return new
                     {
                         Title = "Administrator Dashboard",
-                        TotalLicenses = 1250,
-                        ActiveLicenses = 890,
-                        PendingApplications = 45,
-                        RenewalsDue = 67,
-                        TotalAgencies = 12,
-                        SystemHealth = "Good",
-                        RecentActivity = new[]
-                        {
-                            new { Action = "New license application", User = "John Doe", Time = "2 hours ago" },
-                            new { Action = "License renewal approved", User = "Jane Smith", Time = "4 hours ago" },
-                            new { Action = "New agency registered", User = "System", Time = "6 hours ago" }
-                        }
+                        TotalLicenses = stats.TotalLicenses,
+                        ActiveLicenses = stats.ActiveLicenses,
+                        PendingApplications = stats.PendingApplications,
+                        ApprovedApplications = stats.ApprovedApplications,
+                        RejectedApplications = stats.RejectedApplications,
+                        ExpiredLicenses = stats.ExpiredLicenses,
+                        ExpiringSoonLicenses = stats.ExpiringSoonLicenses,
+                        TotalRevenue = stats.TotalRevenue,
+                        PendingPayments = stats.PendingPayments,
+                        UnreadNotifications = stats.UnreadNotifications,
+                        RecentActivity = stats.RecentActivities,
+                        Notifications = notifications.Take(5).ToList()
                     };
 
                 case "AgencyStaff":
@@ -50,34 +86,34 @@ namespace Gov2Biz.Web.Controllers
                     {
                         Title = "Agency Dashboard",
                         AgencyName = GetAgencyName(tenantId),
-                        TotalLicenses = 156,
-                        ActiveLicenses = 124,
-                        PendingApplications = 8,
-                        RenewalsDue = 12,
-                        ProcessingTime = "2.3 days",
-                        RecentActivity = new[]
-                        {
-                            new { Action = "License application submitted", User = "Current User", Time = "1 hour ago" },
-                            new { Action = "Document uploaded", User = "Current User", Time = "3 hours ago" },
-                            new { Action = "Payment processed", User = "Finance Team", Time = "5 hours ago" }
-                        }
+                        TotalLicenses = stats.TotalLicenses,
+                        ActiveLicenses = stats.ActiveLicenses,
+                        PendingApplications = stats.PendingApplications,
+                        ApprovedApplications = stats.ApprovedApplications,
+                        RejectedApplications = stats.RejectedApplications,
+                        ExpiredLicenses = stats.ExpiredLicenses,
+                        ExpiringSoonLicenses = stats.ExpiringSoonLicenses,
+                        TotalRevenue = stats.TotalRevenue,
+                        PendingPayments = stats.PendingPayments,
+                        UnreadNotifications = stats.UnreadNotifications,
+                        RecentActivity = stats.RecentActivities,
+                        Notifications = notifications.Take(5).ToList()
                     };
 
                 case "Applicant":
                     return new
                     {
                         Title = "Applicant Dashboard",
-                        MyApplications = 3,
-                        ActiveLicenses = 1,
-                        PendingApplications = 2,
-                        RenewalsDue = 0,
-                        NextAction = "Upload documents for application #APP-2024-002",
-                        RecentActivity = new[]
-                        {
-                            new { Action = "Application submitted", Reference = "APP-2024-003", Time = "1 day ago", Status = "Under Review" },
-                            new { Action = "Document requested", Reference = "APP-2024-002", Time = "2 days ago", Status = "Pending" },
-                            new { Action = "License approved", Reference = "APP-2024-001", Time = "1 week ago", Status = "Active" }
-                        }
+                        MyApplications = stats.TotalApplications,
+                        ActiveLicenses = stats.ActiveLicenses,
+                        PendingApplications = stats.PendingApplications,
+                        ApprovedApplications = stats.ApprovedApplications,
+                        RejectedApplications = stats.RejectedApplications,
+                        ExpiredLicenses = stats.ExpiredLicenses,
+                        ExpiringSoonLicenses = stats.ExpiringSoonLicenses,
+                        UnreadNotifications = stats.UnreadNotifications,
+                        RecentActivity = stats.RecentActivities,
+                        Notifications = notifications.Take(5).ToList()
                     };
 
                 default:
@@ -87,6 +123,27 @@ namespace Gov2Biz.Web.Controllers
                         Message = "No dashboard data available for your role."
                     };
             }
+        }
+
+        private dynamic GetErrorDashboardData()
+        {
+            return new
+            {
+                Title = "Dashboard",
+                Message = "Dashboard data is currently unavailable.",
+                TotalLicenses = 0,
+                ActiveLicenses = 0,
+                PendingApplications = 0,
+                ApprovedApplications = 0,
+                RejectedApplications = 0,
+                ExpiredLicenses = 0,
+                ExpiringSoonLicenses = 0,
+                TotalRevenue = 0,
+                PendingPayments = 0,
+                UnreadNotifications = 0,
+                RecentActivity = new List<object>(),
+                Notifications = new List<object>()
+            };
         }
 
         private string GetAgencyName(string tenantId)
