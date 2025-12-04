@@ -132,7 +132,7 @@ namespace Gov2Biz.Web.Controllers
                     var application = await _licenseServiceClient.CreateApplicationAsync(command);
 
                     TempData["Success"] = $"License application {application.ApplicationNumber} created successfully!";
-                    return RedirectToAction("ApplicationDetails", new { id = application.Id });
+                    return RedirectToAction("Details", new { id = application.Id });
                 }
                 catch (Exception ex)
                 {
@@ -262,7 +262,7 @@ namespace Gov2Biz.Web.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // GET: License/ApplicationDetails/5
+        // GET: License/Details/5
         public async Task<IActionResult> ApplicationDetails(int id)
         {
             try
@@ -319,13 +319,13 @@ namespace Gov2Biz.Web.Controllers
                 );
 
                 TempData["Success"] = "Application approved successfully!";
-                return RedirectToAction("ApplicationDetails", new { id });
+                return RedirectToAction("Details", new { id });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error approving application {ApplicationId}", id);
                 TempData["Error"] = "Failed to approve application. Please try again.";
-                return RedirectToAction("ApplicationDetails", new { id });
+                return RedirectToAction("Details", new { id });
             }
         }
 
@@ -354,13 +354,13 @@ namespace Gov2Biz.Web.Controllers
                 );
 
                 TempData["Success"] = "Application rejected successfully!";
-                return RedirectToAction("ApplicationDetails", new { id });
+                return RedirectToAction("Details", new { id });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error rejecting application {ApplicationId}", id);
                 TempData["Error"] = "Failed to reject application. Please try again.";
-                return RedirectToAction("ApplicationDetails", new { id });
+                return RedirectToAction("Details", new { id });
             }
         }
 
@@ -387,7 +387,7 @@ namespace Gov2Biz.Web.Controllers
             {
                 _logger.LogError(ex, "Error issuing license for application {ApplicationId}", applicationId);
                 TempData["Error"] = "Failed to issue license. Please try again.";
-                return RedirectToAction("ApplicationDetails", new { id = applicationId });
+                return RedirectToAction("Details", new { id = applicationId });
             }
         }
 

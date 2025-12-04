@@ -43,7 +43,7 @@ namespace Gov2Biz.Web.Services
             _configuration = configuration;
             _logger = logger;
 
-            var baseUrl = _configuration["ServiceUrls:LicenseService"] ?? "http://licenseservice:5002";
+            var baseUrl = _configuration["ServiceUrls:LicenseService"] ?? "http://licenseservice:8080";
             _httpClient.BaseAddress = new Uri(baseUrl);
             _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         }
@@ -155,7 +155,7 @@ namespace Gov2Biz.Web.Services
                 if (filter.ApplicantId.HasValue)
                     queryString += $"&applicantId={filter.ApplicantId}";
 
-                var response = await _httpClient.GetAsync($"/api/applications{queryString}");
+                var response = await _httpClient.GetAsync($"/api/licenses/applications{queryString}");
                 response.EnsureSuccessStatusCode();
                 
                 var result = await response.Content.ReadFromJsonAsync<ApiResponse<PagedResult<LicenseApplicationDto>>>();
@@ -172,7 +172,7 @@ namespace Gov2Biz.Web.Services
         {
             try
             {
-                var response = await _httpClient.GetAsync($"/api/applications/{id}");
+                var response = await _httpClient.GetAsync($"/api/licenses/applications/{id}");
                 response.EnsureSuccessStatusCode();
                 
                 var result = await response.Content.ReadFromJsonAsync<ApiResponse<LicenseApplicationDto>>();
@@ -190,7 +190,7 @@ namespace Gov2Biz.Web.Services
             try
             {
                 var content = new StringContent(JsonSerializer.Serialize(command), Encoding.UTF8, "application/json");
-                var response = await _httpClient.PostAsync("/api/applications", content);
+                var response = await _httpClient.PostAsync("/api/licenses/applications", content);
                 response.EnsureSuccessStatusCode();
                 
                 var result = await response.Content.ReadFromJsonAsync<ApiResponse<LicenseApplicationDto>>();
@@ -208,7 +208,7 @@ namespace Gov2Biz.Web.Services
             try
             {
                 var content = new StringContent(JsonSerializer.Serialize(command), Encoding.UTF8, "application/json");
-                var response = await _httpClient.PostAsync($"/api/applications/{id}/approve", content);
+                var response = await _httpClient.PostAsync($"/api/licenses/applications/{id}/approve", content);
                 response.EnsureSuccessStatusCode();
                 
                 var result = await response.Content.ReadFromJsonAsync<ApiResponse<LicenseApplicationDto>>();
@@ -226,7 +226,7 @@ namespace Gov2Biz.Web.Services
             try
             {
                 var content = new StringContent(JsonSerializer.Serialize(command), Encoding.UTF8, "application/json");
-                var response = await _httpClient.PostAsync($"/api/applications/{id}/reject", content);
+                var response = await _httpClient.PostAsync($"/api/licenses/applications/{id}/reject", content);
                 response.EnsureSuccessStatusCode();
                 
                 var result = await response.Content.ReadFromJsonAsync<ApiResponse<LicenseApplicationDto>>();
@@ -275,7 +275,7 @@ namespace Gov2Biz.Web.Services
             _configuration = configuration;
             _logger = logger;
 
-            var baseUrl = _configuration["ServiceUrls:DocumentService"] ?? "http://documentservice:5003";
+            var baseUrl = _configuration["ServiceUrls:DocumentService"] ?? "http://documentservice:8080";
             _httpClient.BaseAddress = new Uri(baseUrl);
             _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         }
@@ -316,7 +316,7 @@ namespace Gov2Biz.Web.Services
             _configuration = configuration;
             _logger = logger;
 
-            var baseUrl = _configuration["ServiceUrls:NotificationService"] ?? "http://notificationservice:5004";
+            var baseUrl = _configuration["ServiceUrls:NotificationService"] ?? "http://notificationservice:8080";
             _httpClient.BaseAddress = new Uri(baseUrl);
             _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         }
@@ -357,7 +357,7 @@ namespace Gov2Biz.Web.Services
             _configuration = configuration;
             _logger = logger;
 
-            var baseUrl = _configuration["ServiceUrls:PaymentService"] ?? "http://paymentservice:5005";
+            var baseUrl = _configuration["ServiceUrls:PaymentService"] ?? "http://paymentservice:8080";
             _httpClient.BaseAddress = new Uri(baseUrl);
             _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         }

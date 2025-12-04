@@ -60,9 +60,9 @@
                                         @license.LicenseNumber
                                     </a>
                                 </td>
-                                <td>@license.LicenseType</td>
+                                <td>@license.Type</td>
                                 <td>@license.ApplicantName</td>
-                                <td>@license.BusinessName</td>
+                                <td>-</td>
                                 <td>
                                     <span class="badge badge-@(license.Status == "Active" ? "success" : license.Status == "Pending" || license.Status == "Under Review" ? "warning" : license.Status == "Expired" ? "danger" : "info")">
                                         @license.Status
@@ -70,7 +70,7 @@
                                 </td>
                                 <td>
                                     @{
-                                        var issuedDate = license.IssuedDate;
+                                        var issuedDate = license.IssuedAt;
                                         if (issuedDate != null)
                                         {
                                             try {
@@ -89,7 +89,7 @@
                                 </td>
                                 <td>
                                     @{
-                                        var expiryDate = license.ExpiryDate;
+                                        var expiryDate = license.ExpiresAt;
                                         if (expiryDate != null)
                                         {
                                             try {

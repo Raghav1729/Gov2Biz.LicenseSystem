@@ -45,7 +45,7 @@
                     <div class="row">
                         <div class="col-md-6">
                             <h6 class="text-primary">License Type</h6>
-                            <p>@Model.LicenseType</p>
+                            <p>@Model.Type</p>
                         </div>
                         <div class="col-md-6">
                             <h6 class="text-primary">Agency</h6>
@@ -58,7 +58,7 @@
                             <h6 class="text-primary">Issued Date</h6>
                             <p>
                                 @{
-                                    var issuedDate = Model.IssuedDate;
+                                    var issuedDate = Model.IssuedAt;
                                     if (issuedDate != null)
                                     {
                                         try {
@@ -80,7 +80,7 @@
                             <h6 class="text-primary">Expiry Date</h6>
                             <p>
                                 @{
-                                    var expiryDate = Model.ExpiryDate;
+                                    var expiryDate = Model.ExpiresAt;
                                     if (expiryDate != null)
                                     {
                                         try {
@@ -99,13 +99,13 @@
                             </p>
                         </div>
                     </div>
-                    @if (!string.IsNullOrEmpty(Model.Description))
+                    @if (!string.IsNullOrEmpty(Model.Notes))
                     {
                         <hr>
                         <div class="row">
                             <div class="col-12">
                                 <h6 class="text-primary">Description</h6>
-                                <p>@Model.Description</p>
+                                <p>@Model.Notes</p>
                             </div>
                         </div>
                     }
@@ -129,7 +129,7 @@
                     }
                     
                     <h6 class="text-primary mt-3">Business Name</h6>
-                    <p>@Model.BusinessName</p>
+                    <p>-</p>
                 </div>
             </div>
         </div>
@@ -142,7 +142,7 @@
         </div>
         <div class="card-body">
             @{
-                var baseIssuedDate = Model.IssuedDate;
+                var baseIssuedDate = Model.IssuedAt;
             }
             <div class="timeline">
                 <div class="timeline-item">
@@ -237,7 +237,7 @@
                             <h6 class="timeline-title">License Expired</h6>
                             <p class="timeline-date">
                                 @{
-                                    var expiryDate3 = Model.ExpiryDate;
+                                    var expiryDate3 = Model.ExpiresAt;
                                     if (expiryDate3 != null)
                                     {
                                         try {

@@ -14,7 +14,6 @@ namespace Gov2Biz.LicenseService.Controllers
     }
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
     public class LicensesController : ControllerBase
     {
         private readonly IMediator _mediator;
@@ -25,7 +24,6 @@ namespace Gov2Biz.LicenseService.Controllers
         }
 
         [HttpPost("applications")]
-        [Authorize(Roles = "Administrator,AgencyStaff,Applicant")]
         public async Task<ApiResponse<LicenseApplicationDto>> CreateApplication([FromBody] CreateLicenseApplicationCommand command)
         {
             try
@@ -165,7 +163,6 @@ namespace Gov2Biz.LicenseService.Controllers
         }
 
         [HttpPost("{applicationId}/issue")]
-        [Authorize(Roles = "Administrator,AgencyStaff")]
         public async Task<ApiResponse<LicenseDto>> IssueLicense(int applicationId)
         {
             try
