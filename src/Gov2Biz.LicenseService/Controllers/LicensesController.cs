@@ -1,13 +1,18 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using MediatR;
-using Gov2Biz.LicenseService.CQRS.Commands;
 using Gov2Biz.LicenseService.CQRS.Queries;
-using Gov2Biz.Shared.Responses;
+using Gov2Biz.Shared.DTOs;
 using System.Security.Claims;
 
 namespace Gov2Biz.LicenseService.Controllers
 {
+    public class ApiResponse<T>
+    {
+        public T? Data { get; set; }
+        public bool Success { get; set; }
+        public string? Message { get; set; }
+    }
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]

@@ -2,9 +2,16 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Gov2Biz.Shared.DTOs;
 
 namespace Gov2Biz.Web.Services
 {
+    public class ApiResponse<T>
+    {
+        public T? Data { get; set; }
+        public bool Success { get; set; }
+        public string? Message { get; set; }
+    }
     public interface ILicenseServiceClient
     {
         Task<DashboardStatsDto> GetDashboardStatsAsync(string? agencyId = null);

@@ -51,7 +51,7 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
         }
     }
 
-    public class GetLicenseApplicationsHandler : IRequestHandler<GetLicenseApplicationsQuery, Gov2Biz.Shared.Responses.PagedResult<LicenseApplicationDto>>
+    public class GetLicenseApplicationsHandler : IRequestHandler<GetLicenseApplicationsQuery, PagedResult<LicenseApplicationDto>>
     {
         private readonly LicenseDbContext _context;
 
@@ -60,7 +60,7 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
             _context = context;
         }
 
-        public async Task<Gov2Biz.Shared.Responses.PagedResult<LicenseApplicationDto>> Handle(GetLicenseApplicationsQuery request, CancellationToken cancellationToken)
+        public async Task<PagedResult<LicenseApplicationDto>> Handle(GetLicenseApplicationsQuery request, CancellationToken cancellationToken)
         {
             var query = _context.LicenseApplications.AsQueryable();
 
@@ -86,7 +86,7 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
                 dtos.Add(await MapToDto(application));
             }
 
-            return new Gov2Biz.Shared.Responses.PagedResult<LicenseApplicationDto>
+            return new PagedResult<LicenseApplicationDto>
             {
                 Items = dtos,
                 TotalCount = totalCount,

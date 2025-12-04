@@ -1,4 +1,5 @@
 using Gov2Biz.NotificationService.Data;
+using Gov2Biz.NotificationService.Services;
 using Gov2Biz.Shared.Models;
 using Gov2Biz.Shared.DTOs;
 using MediatR;

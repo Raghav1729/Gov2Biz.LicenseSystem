@@ -1,3 +1,6 @@
+using Microsoft.AspNetCore.Http;
+using MediatR;
+
 namespace Gov2Biz.Shared.DTOs
 {
     // Authentication DTOs
@@ -262,30 +265,30 @@ namespace Gov2Biz.Shared.DTOs
         decimal ApplicationFee,
         string ApplicantNotes,
         int ApplicantId
-    );
+    ) : IRequest<LicenseApplicationDto>;
 
     public record ApproveLicenseApplicationCommand(
         int ApplicationId,
         string ReviewerNotes,
         int ReviewerId
-    );
+    ) : IRequest<LicenseDto>;
 
     public record RejectLicenseApplicationCommand(
         int ApplicationId,
         string RejectionReason,
         int ReviewerId
-    );
+    ) : IRequest<LicenseApplicationDto>;
 
     public record IssueLicenseCommand(
         int ApplicationId,
         int IssuerId
-    );
+    ) : IRequest<LicenseDto>;
 
     public record RenewLicenseCommand(
         int LicenseId,
         int RenewedBy,
         int RenewalPeriodMonths = 12
-    );
+    ) : IRequest<LicenseDto>;
 
     public record CreateNotificationCommand(
         string Title,
@@ -302,4 +305,13 @@ namespace Gov2Biz.Shared.DTOs
         string PaymentMethod,
         string Currency = "USD"
     );
+
+    // CQRS Queries
+    public record GetLicenseQuery(int LicenseId) : IRequest<LicenseDto>;
+    public record GetLicensesQuery(LicenseFilter Filter) : IRequest<PagedResult<LicenseDto>>;
+    public record GetLicenseApplicationQuery(int ApplicationId) : IRequest<LicenseApplicationDto>;
+    public record GetLicenseApplicationsQuery(LicenseApplicationFilter Filter) : IRequest<PagedResult<LicenseApplicationDto>>;
+    public record GetUserLicensesQuery(int UserId) : IRequest<List<LicenseDto>>;
+    public record GetUserApplicationsQuery(int UserId) : IRequest<List<LicenseApplicationDto>>;
+    public record GetDashboardStatsQuery(string? AgencyId = null) : IRequest<DashboardStatsDto>;
 }

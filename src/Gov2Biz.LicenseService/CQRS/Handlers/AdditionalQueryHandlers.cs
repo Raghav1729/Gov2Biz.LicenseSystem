@@ -47,7 +47,7 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
         }
     }
 
-    public class GetLicensesHandler : IRequestHandler<GetLicensesQuery, Gov2Biz.Shared.Responses.PagedResult<LicenseDto>>
+    public class GetLicensesHandler : IRequestHandler<GetLicensesQuery, PagedResult<LicenseDto>>
     {
         private readonly LicenseDbContext _context;
 
@@ -56,7 +56,7 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
             _context = context;
         }
 
-        public async Task<Gov2Biz.Shared.Responses.PagedResult<LicenseDto>> Handle(GetLicensesQuery request, CancellationToken cancellationToken)
+        public async Task<PagedResult<LicenseDto>> Handle(GetLicensesQuery request, CancellationToken cancellationToken)
         {
             var query = _context.Licenses.AsQueryable();
 
@@ -82,7 +82,7 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
                 dtos.Add(await MapToDto(license));
             }
 
-            return new Gov2Biz.Shared.Responses.PagedResult<LicenseDto>
+            return new PagedResult<LicenseDto>
             {
                 Items = dtos,
                 TotalCount = totalCount,
@@ -208,7 +208,7 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
         }
     }
 
-    public class GetDashboardStatsHandler : IRequestHandler<GetDashboardStatsQuery, Gov2Biz.Shared.Responses.DashboardStatsDto>
+    public class GetDashboardStatsHandler : IRequestHandler<GetDashboardStatsQuery, DashboardStatsDto>
     {
         private readonly LicenseDbContext _context;
 
@@ -217,7 +217,7 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
             _context = context;
         }
 
-        public async Task<Gov2Biz.Shared.Responses.DashboardStatsDto> Handle(GetDashboardStatsQuery request, CancellationToken cancellationToken)
+        public async Task<DashboardStatsDto> Handle(GetDashboardStatsQuery request, CancellationToken cancellationToken)
         {
             var applicationQuery = _context.LicenseApplications.AsQueryable();
             var licenseQuery = _context.Licenses.AsQueryable();
@@ -244,7 +244,7 @@ namespace Gov2Biz.LicenseService.CQRS.Handlers
                 .Where(a => a.PaymentCompleted)
                 .SumAsync(a => a.Fee, cancellationToken);
 
-            return new Gov2Biz.Shared.Responses.DashboardStatsDto
+            return new DashboardStatsDto
             {
                 TotalApplications = totalApplications,
                 PendingApplications = pendingApplications,

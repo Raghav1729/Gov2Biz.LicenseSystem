@@ -4,12 +4,13 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Gov2Biz.LicenseService.Data;
 using Gov2Biz.LicenseService.CQRS.Handlers;
-using Gov2Biz.LicenseService.CQRS.Commands;
 using Gov2Biz.LicenseService.CQRS.Queries;
 using Gov2Biz.LicenseService.Services;
+using Gov2Biz.Shared.DTOs;
 using MediatR;
 using Hangfire;
 using Hangfire.SqlServer;
+using Hangfire.Dashboard;
 
 var builder = WebApplication.CreateBuilder(args);
 
